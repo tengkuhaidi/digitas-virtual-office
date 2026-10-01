@@ -196,27 +196,30 @@ export default function OfficeCanvas({ selectedAgentId, onSelectAgent }: OfficeC
     a2Ctx.fillStyle = '#0f172a'; a2Ctx.font = 'bold 20px sans-serif'; a2Ctx.fillText('EXECUTE', 75, 350);
     const art2Tex = new THREE.CanvasTexture(art2Canvas);
 
-    // DYNAMIC SPEECH BUBBLE GENERATOR
+    // DYNAMIC SPEECH BUBBLE GENERATOR (High-Resolution 1024x360, High-Contrast & Wrapped Clean Layout)
     const createBubbleTexture = (name: string, role: string, text: string, colorHex: string) => {
       const bCanvas = document.createElement('canvas');
-      bCanvas.width = 512; bCanvas.height = 190;
+      bCanvas.width = 1024;
+      bCanvas.height = 360;
       const bCtx = bCanvas.getContext('2d')!;
 
+      // Crisp background with soft shadow
       bCtx.fillStyle = '#ffffff';
-      bCtx.shadowColor = 'rgba(0, 0, 0, 0.25)';
-      bCtx.shadowBlur = 12;
-      bCtx.shadowOffsetY = 6;
-      
-      const x = 16, y = 16, w = 480, h = 130, r = 20;
+      bCtx.shadowColor = 'rgba(15, 23, 42, 0.22)';
+      bCtx.shadowBlur = 24;
+      bCtx.shadowOffsetY = 10;
+
+      const x = 32, y = 24, w = 960, h = 260, r = 36;
       bCtx.beginPath();
       bCtx.moveTo(x + r, y);
       bCtx.lineTo(x + w - r, y);
       bCtx.quadraticCurveTo(x + w, y, x + w, y + r);
       bCtx.lineTo(x + w, y + h - r);
       bCtx.quadraticCurveTo(x + w, y + h, x + w - r, y + h);
-      bCtx.lineTo(x + w / 2 + 15, y + h);
-      bCtx.lineTo(x + w / 2, y + h + 22);
-      bCtx.lineTo(x + w / 2 - 15, y + h);
+      // speech tail
+      bCtx.lineTo(x + w / 2 + 24, y + h);
+      bCtx.lineTo(x + w / 2, y + h + 42);
+      bCtx.lineTo(x + w / 2 - 24, y + h);
       bCtx.lineTo(x + r, y + h);
       bCtx.quadraticCurveTo(x, y + h, x, y + h - r);
       bCtx.lineTo(x, y + r);
@@ -224,18 +227,65 @@ export default function OfficeCanvas({ selectedAgentId, onSelectAgent }: OfficeC
       bCtx.closePath();
       bCtx.fill();
 
+      // Reset shadow for ultra-sharp typography
       bCtx.shadowColor = 'transparent';
-      bCtx.fillStyle = colorHex;
-      bCtx.font = 'bold 22px system-ui, sans-serif';
-      bCtx.fillText(`● ${name.toUpperCase()}  //  ${role.toUpperCase()}`, 36, 55);
 
-      bCtx.fillStyle = '#1e293b';
-      bCtx.font = '500 20px system-ui, sans-serif';
-      bCtx.fillText(`"${text}"`, 36, 95);
+      // Header Tag: High-contrast Dark Tone of Agent Color
+      const roleMap: Record<string, string> = {
+        'gajahmada': 'ORCHESTRATOR',
+        'robert': 'SEO ANALYST',
+        'talia': 'CONTENT WRITER',
+        'putra': 'LEAD CS & CRM',
+      };
+      const cleanRole = roleMap[name.toLowerCase()] || role.split(' ')[0].toUpperCase();
+
+      // Color mapping for high-contrast legible header
+      let badgeColor = '#1e40af'; // dark blue for Robert
+      if (colorHex.includes('f59e0b') || colorHex.includes('eab308')) badgeColor = '#b45309'; // warm amber/bronze for Gajah Mada
+      else if (colorHex.includes('10b981') || colorHex.includes('22c55e')) badgeColor = '#047857'; // emerald dark for Putra
+      else if (colorHex.includes('f43f5e') || colorHex.includes('ec4899')) badgeColor = '#be123c'; // rose dark for Talia
+
+      // Capsule Badge for Role
+      bCtx.fillStyle = badgeColor;
+      bCtx.font = 'bold 34px -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif';
+      bCtx.fillText(`●  ${name.toUpperCase()}`, 64, 82);
 
       bCtx.fillStyle = '#64748b';
-      bCtx.font = 'bold 13px system-ui, sans-serif';
-      bCtx.fillText('STATUS: REAL-TIME AUTONOMOUS', 36, 126);
+      bCtx.font = '600 28px -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif';
+      bCtx.fillText(`//  ${cleanRole}`, 64 + bCtx.measureText(`●  ${name.toUpperCase()}  `).width, 82);
+
+      // Body text with 2-line auto-wrap so nothing is truncated
+      bCtx.fillStyle = '#0f172a';
+      bCtx.font = '500 36px -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif';
+
+      // Simple word wrapping
+      const words = text.replace(/"/g, '').split(' ');
+      let line1 = '';
+      let line2 = '';
+      for (const w of words) {
+        if ((line1 + w).length < 38 && !line2) {
+          line1 += (line1 ? ' ' : '') + w;
+        } else {
+          line2 += (line2 ? ' ' : '') + w;
+        }
+      }
+
+      bCtx.fillText(`"${line1}`, 64, 145);
+      if (line2) {
+        bCtx.fillText(`${line2}"`, 64, 195);
+      } else {
+        bCtx.fillText('"', 64 + bCtx.measureText(`"${line1}`).width, 145);
+      }
+
+      // Micro status pill
+      bCtx.fillStyle = '#f1f5f9';
+      bCtx.beginPath();
+      bCtx.roundRect(64, 218, 300, 38, 12);
+      bCtx.fill();
+
+      bCtx.fillStyle = '#475569';
+      bCtx.font = 'bold 20px monospace';
+      bCtx.fillText('● ACTIVE AUTONOMOUS', 82, 244);
 
       const tex = new THREE.CanvasTexture(bCanvas);
       tex.needsUpdate = true;
@@ -983,8 +1033,8 @@ export default function OfficeCanvas({ selectedAgentId, onSelectAgent }: OfficeC
       const initialText = STATE_SPEECHES[agentId].WORKING;
       const bTex = createBubbleTexture(data.name, data.role, initialText, data.color);
       const bSprite = new THREE.Sprite(new THREE.SpriteMaterial({ map: bTex, transparent: true }));
-      bSprite.scale.set(3.4, 1.25, 1.0);
-      bSprite.position.set(0, 2.5, 0);
+      bSprite.scale.set(2.6, 0.92, 1.0);
+      bSprite.position.set(0, 3.2, 0);
       agentGroup.add(bSprite);
 
       clickableObjects.push(torso);
@@ -1270,7 +1320,7 @@ export default function OfficeCanvas({ selectedAgentId, onSelectAgent }: OfficeC
         }
 
         // Float speech bubble smoothly
-        agent.bubbleSprite.position.y = 2.5 + Math.sin(t * 2 + i) * 0.08;
+        agent.bubbleSprite.position.y = 3.2 + Math.sin(t * 2 + i) * 0.06;
       });
 
       renderer.render(scene, camera);
