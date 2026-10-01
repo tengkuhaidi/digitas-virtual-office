@@ -10,7 +10,7 @@ interface OfficeCanvasProps {
   onSelectAgent: (id: string | null) => void;
 }
 
-type AgentState = 'WORKING' | 'WALKING' | 'COFFEE' | 'GAMING' | 'MEETING';
+type AgentState = 'WORKING' | 'WALKING' | 'COFFEE' | 'GAMING' | 'MEETING' | 'DINING' | 'GYM';
 
 interface AgentSim {
   id: string;
@@ -29,8 +29,10 @@ interface AgentSim {
   head: THREE.Group;
   leftArm: THREE.Group;
   rightArm: THREE.Group;
-  leftLeg: THREE.Group;
-  rightLeg: THREE.Group;
+  leftThigh: THREE.Group;
+  rightThigh: THREE.Group;
+  leftShin: THREE.Group;
+  rightShin: THREE.Group;
   bubbleSprite: THREE.Sprite;
   currentText: string;
   isSeated: boolean;
@@ -39,7 +41,7 @@ interface AgentSim {
 export default function OfficeCanvas({ selectedAgentId, onSelectAgent }: OfficeCanvasProps) {
   const mountRef = useRef<HTMLDivElement>(null);
   const controlsRef = useRef<OrbitControls | null>(null);
-  const targetCamPos = useRef(new THREE.Vector3(16, 20, 24));
+  const targetCamPos = useRef(new THREE.Vector3(18, 22, 26));
   const targetCamLook = useRef(new THREE.Vector3(0, 1.0, 0));
   const isTransitioning = useRef(false);
 
@@ -55,7 +57,7 @@ export default function OfficeCanvas({ selectedAgentId, onSelectAgent }: OfficeC
 
     // CAMERA (Wide isometric diorama view)
     const camera = new THREE.PerspectiveCamera(35, width / height, 0.1, 1000);
-    camera.position.set(16, 20, 24);
+    camera.position.set(18, 22, 26);
     camera.lookAt(0, 1.0, 0);
 
     // RENDERER
@@ -75,7 +77,7 @@ export default function OfficeCanvas({ selectedAgentId, onSelectAgent }: OfficeC
     controls.target.set(0, 1.0, 0);
     controls.maxPolarAngle = Math.PI / 2.05;
     controls.minDistance = 4.0;
-    controls.maxDistance = 45.0;
+    controls.maxDistance = 50.0;
     controls.rotateSpeed = 0.8;
     controls.zoomSpeed = 1.0;
     controls.panSpeed = 0.8;
@@ -85,16 +87,16 @@ export default function OfficeCanvas({ selectedAgentId, onSelectAgent }: OfficeC
       isTransitioning.current = false;
     });
 
-    // LIGHTING
+    // LIGHTING: Cozy Warm Startup Lighting
     const hemiLight = new THREE.HemisphereLight(0xfff7ed, 0x334155, 1.3);
     scene.add(hemiLight);
 
     const sun = new THREE.DirectionalLight(0xffedd5, 1.6);
-    sun.position.set(16, 24, 14);
+    sun.position.set(18, 26, 16);
     scene.add(sun);
 
     const fill = new THREE.DirectionalLight(0x93c5fd, 0.6);
-    fill.position.set(-14, 14, -12);
+    fill.position.set(-16, 16, -14);
     scene.add(fill);
 
     // --- BAKED STATIC CANVAS TEXTURES ---
@@ -140,7 +142,6 @@ export default function OfficeCanvas({ selectedAgentId, onSelectAgent }: OfficeC
     ['[+62 812-****-****] "Halo, biaya urus PT?"', '[PUTRA] "Halo! Estimasi 1-2 hari kerja..."', '[INVOICE NINJA] Generated Draft #INV-089', '[LEADS] 5 Outreach Pipeline Synced'].forEach((l, i) => wCtx.fillText(l, 20, 85 + i * 32));
     const waTex = new THREE.CanvasTexture(waCanvas);
 
-    // Meeting Screen Presentation Texture
     const meetCanvas = document.createElement('canvas');
     meetCanvas.width = 512; meetCanvas.height = 280;
     const mCtx = meetCanvas.getContext('2d')!;
@@ -151,7 +152,6 @@ export default function OfficeCanvas({ selectedAgentId, onSelectAgent }: OfficeC
     ['Q4 Growth: +142% Organic Inbound Traffic', 'Average Client Response Time: < 3 Minutes', 'SEO Article Indexation Rate: 99.4%', 'Goal: Expand Notary & Corporate Services'].forEach((l, i) => mCtx.fillText(l, 24, 85 + i * 36));
     const meetTex = new THREE.CanvasTexture(meetCanvas);
 
-    // Gaming TV Screen Texture (FIFA / PS5 Match)
     const tvCanvas = document.createElement('canvas');
     tvCanvas.width = 512; tvCanvas.height = 280;
     const tvCtx = tvCanvas.getContext('2d')!;
@@ -160,9 +160,41 @@ export default function OfficeCanvas({ selectedAgentId, onSelectAgent }: OfficeC
     tvCtx.fillText('★ PS5 GAME MATCH ★', 90, 55);
     tvCtx.fillStyle = '#ffffff'; tvCtx.font = 'bold 26px sans-serif';
     tvCtx.fillText('AGENTS 3 - 1 BUGS', 115, 125);
-    tvCtx.fillStyle = '#fbbf24'; tvCtx.font = 'bold 18px sans-serif';
+    tvCtx.fillStyle = '#fbbf24'; tvCtx.font = '18px sans-serif';
     tvCtx.fillText('MATCH TIME: 88:14 // CASUAL BREAK', 70, 180);
     const tvTex = new THREE.CanvasTexture(tvCanvas);
+
+    // Clock Face Canvas
+    const clockCanvas = document.createElement('canvas');
+    clockCanvas.width = 256; clockCanvas.height = 256;
+    const clkCtx = clockCanvas.getContext('2d')!;
+    clkCtx.fillStyle = '#ffffff'; clkCtx.beginPath(); clkCtx.arc(128, 128, 120, 0, Math.PI * 2); clkCtx.fill();
+    clkCtx.strokeStyle = '#0f172a'; clkCtx.lineWidth = 10; clkCtx.stroke();
+    clkCtx.fillStyle = '#0f172a'; clkCtx.font = 'bold 28px sans-serif'; clkCtx.textAlign = 'center';
+    clkCtx.fillText('12', 128, 48); clkCtx.fillText('3', 220, 138); clkCtx.fillText('6', 128, 226); clkCtx.fillText('9', 36, 138);
+    // Hands
+    clkCtx.strokeStyle = '#0f172a'; clkCtx.lineWidth = 8; clkCtx.beginPath(); clkCtx.moveTo(128, 128); clkCtx.lineTo(128, 65); clkCtx.stroke();
+    clkCtx.strokeStyle = '#ef4444'; clkCtx.lineWidth = 4; clkCtx.beginPath(); clkCtx.moveTo(128, 128); clkCtx.lineTo(180, 128); clkCtx.stroke();
+    const clockTex = new THREE.CanvasTexture(clockCanvas);
+
+    // Wall Art Painting 1 Canvas (Abstract Bauhaus)
+    const art1Canvas = document.createElement('canvas');
+    art1Canvas.width = 256; art1Canvas.height = 384;
+    const a1Ctx = art1Canvas.getContext('2d')!;
+    a1Ctx.fillStyle = '#fef08a'; a1Ctx.fillRect(0, 0, 256, 384);
+    a1Ctx.fillStyle = '#ef4444'; a1Ctx.beginPath(); a1Ctx.arc(128, 140, 80, 0, Math.PI * 2); a1Ctx.fill();
+    a1Ctx.fillStyle = '#1e3a8a'; a1Ctx.fillRect(40, 220, 180, 90);
+    a1Ctx.fillStyle = '#0f172a'; a1Ctx.font = 'bold 20px sans-serif'; a1Ctx.fillText('INNOVATE', 65, 350);
+    const art1Tex = new THREE.CanvasTexture(art1Canvas);
+
+    // Wall Art Painting 2 Canvas (Modern Minimal Line)
+    const art2Canvas = document.createElement('canvas');
+    art2Canvas.width = 256; art2Canvas.height = 384;
+    const a2Ctx = art2Canvas.getContext('2d')!;
+    a2Ctx.fillStyle = '#e2e8f0'; a2Ctx.fillRect(0, 0, 256, 384);
+    a2Ctx.fillStyle = '#059669'; a2Ctx.beginPath(); a2Ctx.ellipse(128, 160, 90, 60, Math.PI / 4, 0, Math.PI * 2); a2Ctx.fill();
+    a2Ctx.fillStyle = '#0f172a'; a2Ctx.font = 'bold 20px sans-serif'; a2Ctx.fillText('EXECUTE', 75, 350);
+    const art2Tex = new THREE.CanvasTexture(art2Canvas);
 
     // DYNAMIC SPEECH BUBBLE GENERATOR
     const createBubbleTexture = (name: string, role: string, text: string, colorHex: string) => {
@@ -211,8 +243,8 @@ export default function OfficeCanvas({ selectedAgentId, onSelectAgent }: OfficeC
     };
 
     // --- EXPANDED STARTUP OFFICE ARCHITECTURE ---
-    const roomW = 28;
-    const roomD = 24;
+    const roomW = 32;
+    const roomD = 28;
 
     // Floor
     const floor = new THREE.Mesh(
@@ -232,9 +264,102 @@ export default function OfficeCanvas({ selectedAgentId, onSelectAgent }: OfficeC
     leftWall.position.set(-roomW / 2, 3.0, 0);
     scene.add(leftWall);
 
-    // 1. ZONA 1: RUANG MEETING KACA (North-East Corner: x: 7.5, z: -6.5)
+    // --- WALL DECOR: WALL CLOCK & ART PAINTINGS ---
+    // Wall Clock on Back Wall (center high)
+    const wallClock = new THREE.Mesh(
+      new THREE.CylinderGeometry(0.7, 0.7, 0.08, 32),
+      new THREE.MeshStandardMaterial({ map: clockTex })
+    );
+    wallClock.rotation.x = Math.PI / 2;
+    wallClock.position.set(0, 4.6, -roomD / 2 + 0.2);
+    scene.add(wallClock);
+
+    // Bauhaus Art Frame 1
+    const frame1 = new THREE.Mesh(new THREE.BoxGeometry(1.4, 2.0, 0.06), new THREE.MeshStandardMaterial({ color: 0x090d16 }));
+    frame1.position.set(-4.5, 4.0, -roomD / 2 + 0.18);
+    const canvas1 = new THREE.Mesh(new THREE.PlaneGeometry(1.25, 1.85), new THREE.MeshBasicMaterial({ map: art1Tex }));
+    canvas1.position.set(-4.5, 4.0, -roomD / 2 + 0.22);
+    scene.add(frame1); scene.add(canvas1);
+
+    // Minimal Line Art Frame 2
+    const frame2 = new THREE.Mesh(new THREE.BoxGeometry(1.4, 2.0, 0.06), new THREE.MeshStandardMaterial({ color: 0x090d16 }));
+    frame2.position.set(4.5, 4.0, -roomD / 2 + 0.18);
+    const canvas2 = new THREE.Mesh(new THREE.PlaneGeometry(1.25, 1.85), new THREE.MeshBasicMaterial({ map: art2Tex }));
+    canvas2.position.set(4.5, 4.0, -roomD / 2 + 0.22);
+    scene.add(frame2); scene.add(canvas2);
+
+    // --- BIOPHILIC PLANTS & INDOOR TREES ---
+    const createIndoorTree = (px: number, pz: number, scale = 1.0) => {
+      const treeGroup = new THREE.Group();
+      treeGroup.position.set(px, 0, pz);
+      treeGroup.scale.set(scale, scale, scale);
+
+      // Ceramic White Pot
+      const pot = new THREE.Mesh(
+        new THREE.CylinderGeometry(0.65, 0.45, 1.2, 16),
+        new THREE.MeshStandardMaterial({ color: 0xffffff, roughness: 0.2 })
+      );
+      pot.position.y = 0.6;
+      treeGroup.add(pot);
+
+      // Pot Gold Accent Ring
+      const potRing = new THREE.Mesh(
+        new THREE.TorusGeometry(0.66, 0.03, 8, 24),
+        new THREE.MeshStandardMaterial({ color: 0xf59e0b, metalness: 0.8 })
+      );
+      potRing.rotation.x = Math.PI / 2;
+      potRing.position.y = 0.95;
+      treeGroup.add(potRing);
+
+      // Wooden Trunk
+      const trunk = new THREE.Mesh(
+        new THREE.CylinderGeometry(0.12, 0.15, 2.2, 8),
+        new THREE.MeshStandardMaterial({ color: 0x5c3a21, roughness: 0.8 })
+      );
+      trunk.position.y = 2.0;
+      treeGroup.add(trunk);
+
+      // Lush Leaves Foliage (Multi-tier cones & spheres)
+      const leafMat1 = new THREE.MeshStandardMaterial({ color: 0x15803d, roughness: 0.6 });
+      const leafMat2 = new THREE.MeshStandardMaterial({ color: 0x16a34a, roughness: 0.6 });
+
+      const f1 = new THREE.Mesh(new THREE.SphereGeometry(0.9, 12, 12), leafMat1);
+      f1.position.y = 3.0;
+      treeGroup.add(f1);
+
+      const f2 = new THREE.Mesh(new THREE.SphereGeometry(0.7, 12, 12), leafMat2);
+      f2.position.set(0.3, 3.6, 0.2);
+      treeGroup.add(f2);
+
+      const f3 = new THREE.Mesh(new THREE.SphereGeometry(0.65, 12, 12), leafMat1);
+      f3.position.set(-0.3, 3.4, -0.2);
+      treeGroup.add(f3);
+
+      scene.add(treeGroup);
+    };
+
+    // Plant Indoor Trees in key spots
+    createIndoorTree(-roomW / 2 + 1.8, -roomD / 2 + 1.8, 1.2); // Corner back-left
+    createIndoorTree(roomW / 2 - 1.8, -roomD / 2 + 1.8, 1.2);  // Corner back-right
+    createIndoorTree(-roomW / 2 + 1.8, roomD / 2 - 2.0, 1.1);  // Corner front-left
+    createIndoorTree(roomW / 2 - 1.8, roomD / 2 - 2.0, 1.1);   // Corner front-right
+
+    // Table flower pots
+    const createFlowerPot = (parent: THREE.Group, lx: number, ly: number, lz: number) => {
+      const p = new THREE.Group();
+      p.position.set(lx, ly, lz);
+      const smallPot = new THREE.Mesh(new THREE.CylinderGeometry(0.12, 0.08, 0.2, 12), new THREE.MeshStandardMaterial({ color: 0xffffff }));
+      smallPot.position.y = 0.1;
+      p.add(smallPot);
+      const flower = new THREE.Mesh(new THREE.SphereGeometry(0.14, 8, 8), new THREE.MeshStandardMaterial({ color: 0xf43f5e }));
+      flower.position.y = 0.24;
+      p.add(flower);
+      parent.add(p);
+    };
+
+    // --- ZONA 1: RUANG MEETING KACA (North-East: x: 9.5, z: -8.0) ---
     const meetGroup = new THREE.Group();
-    meetGroup.position.set(7.5, 0, -6.5);
+    meetGroup.position.set(9.5, 0, -8.0);
 
     const glassMat = new THREE.MeshStandardMaterial({
       color: 0xbae6fd,
@@ -242,27 +367,28 @@ export default function OfficeCanvas({ selectedAgentId, onSelectAgent }: OfficeC
       opacity: 0.35,
       roughness: 0.1,
     });
-    const meetWallFront = new THREE.Mesh(new THREE.BoxGeometry(8.5, 4.5, 0.08), glassMat);
-    meetWallFront.position.set(0, 2.25, 4.0);
+    const meetWallFront = new THREE.Mesh(new THREE.BoxGeometry(9.0, 4.5, 0.08), glassMat);
+    meetWallFront.position.set(0, 2.25, 4.5);
     meetGroup.add(meetWallFront);
 
-    const meetWallSide = new THREE.Mesh(new THREE.BoxGeometry(0.08, 4.5, 8.0), glassMat);
-    meetWallSide.position.set(-4.25, 2.25, 0);
+    const meetWallSide = new THREE.Mesh(new THREE.BoxGeometry(0.08, 4.5, 9.0), glassMat);
+    meetWallSide.position.set(-4.5, 2.25, 0);
     meetGroup.add(meetWallSide);
 
     const metalMullion = new THREE.MeshStandardMaterial({ color: 0x1e293b, metalness: 0.8 });
     const m1 = new THREE.Mesh(new THREE.BoxGeometry(0.12, 4.5, 0.12), metalMullion);
-    m1.position.set(-4.25, 2.25, 4.0);
+    m1.position.set(-4.5, 2.25, 4.5);
     meetGroup.add(m1);
 
     const confTable = new THREE.Mesh(
-      new THREE.BoxGeometry(4.8, 0.1, 2.4),
+      new THREE.BoxGeometry(5.2, 0.1, 2.4),
       new THREE.MeshStandardMaterial({ color: 0xb45309, roughness: 0.3 })
     );
     confTable.position.set(0, 1.05, 0);
     meetGroup.add(confTable);
+    createFlowerPot(meetGroup, 0, 1.1, 0);
 
-    [[-2.0, -0.9], [2.0, -0.9], [-2.0, 0.9], [2.0, 0.9]].forEach(([lx, lz]) => {
+    [[-2.2, -0.9], [2.2, -0.9], [-2.2, 0.9], [2.2, 0.9]].forEach(([lx, lz]) => {
       const leg = new THREE.Mesh(new THREE.CylinderGeometry(0.06, 0.06, 1.0, 12), metalMullion);
       leg.position.set(lx, 0.55, lz);
       meetGroup.add(leg);
@@ -275,30 +401,24 @@ export default function OfficeCanvas({ selectedAgentId, onSelectAgent }: OfficeC
       c.rotation.y = ry;
       meetGroup.add(c);
     };
-    addConfChair(-1.3, -1.5, 0);
-    addConfChair(1.3, -1.5, 0);
-    addConfChair(-1.3, 1.5, Math.PI);
-    addConfChair(1.3, 1.5, Math.PI);
+    addConfChair(-1.5, -1.5, 0);
+    addConfChair(1.5, -1.5, 0);
+    addConfChair(-1.5, 1.5, Math.PI);
+    addConfChair(1.5, 1.5, Math.PI);
 
-    const presFrame = new THREE.Mesh(
-      new THREE.BoxGeometry(3.2, 1.8, 0.08),
-      new THREE.MeshStandardMaterial({ color: 0x090d16 })
-    );
-    presFrame.position.set(0, 2.8, -4.8);
+    const presFrame = new THREE.Mesh(new THREE.BoxGeometry(3.2, 1.8, 0.08), new THREE.MeshStandardMaterial({ color: 0x090d16 }));
+    presFrame.position.set(0, 2.8, -4.4);
     meetGroup.add(presFrame);
 
-    const presScreen = new THREE.Mesh(
-      new THREE.PlaneGeometry(3.1, 1.7),
-      new THREE.MeshBasicMaterial({ map: meetTex })
-    );
-    presScreen.position.set(0, 2.8, -4.75);
+    const presScreen = new THREE.Mesh(new THREE.PlaneGeometry(3.1, 1.7), new THREE.MeshBasicMaterial({ map: meetTex }));
+    presScreen.position.set(0, 2.8, -4.35);
     meetGroup.add(presScreen);
 
     scene.add(meetGroup);
 
-    // 2. ZONA 2: PANTRY & COFFEE BAR STATION (North-West Corner: x: -8.5, z: -7.5)
+    // --- ZONA 2: PANTRY & COFFEE BAR STATION (North-West: x: -9.5, z: -8.0) ---
     const pantryGroup = new THREE.Group();
-    pantryGroup.position.set(-8.5, 0, -7.5);
+    pantryGroup.position.set(-9.5, 0, -8.0);
 
     const barTop = new THREE.Mesh(
       new THREE.BoxGeometry(5.5, 0.12, 1.6),
@@ -321,17 +441,11 @@ export default function OfficeCanvas({ selectedAgentId, onSelectAgent }: OfficeC
     espMachine.position.set(-1.4, 1.55, 0.1);
     pantryGroup.add(espMachine);
 
-    const espLight = new THREE.Mesh(
-      new THREE.BoxGeometry(0.12, 0.06, 0.02),
-      new THREE.MeshBasicMaterial({ color: 0x10b981 })
-    );
+    const espLight = new THREE.Mesh(new THREE.BoxGeometry(0.12, 0.06, 0.02), new THREE.MeshBasicMaterial({ color: 0x10b981 }));
     espLight.position.set(-1.4, 1.8, 0.51);
     pantryGroup.add(espLight);
 
-    const cooler = new THREE.Mesh(
-      new THREE.CylinderGeometry(0.35, 0.35, 1.5, 16),
-      new THREE.MeshStandardMaterial({ color: 0xe2e8f0 })
-    );
+    const cooler = new THREE.Mesh(new THREE.CylinderGeometry(0.35, 0.35, 1.5, 16), new THREE.MeshStandardMaterial({ color: 0xe2e8f0 }));
     cooler.position.set(1.8, 0.75, 0);
     pantryGroup.add(cooler);
 
@@ -343,23 +457,144 @@ export default function OfficeCanvas({ selectedAgentId, onSelectAgent }: OfficeC
     pantryGroup.add(jug);
 
     [0xef4444, 0x3b82f6, 0xf59e0b, 0x10b981].forEach((col, idx) => {
-      const cmug = new THREE.Mesh(
-        new THREE.CylinderGeometry(0.08, 0.07, 0.16, 12),
-        new THREE.MeshStandardMaterial({ color: col, roughness: 0.2 })
-      );
+      const cmug = new THREE.Mesh(new THREE.CylinderGeometry(0.08, 0.07, 0.16, 12), new THREE.MeshStandardMaterial({ color: col, roughness: 0.2 }));
       cmug.position.set(-0.2 + idx * 0.3, 1.25, 0.2);
       pantryGroup.add(cmug);
     });
 
     scene.add(pantryGroup);
 
-    // 3. ZONA 3: GAMING & BREAKOUT LOUNGE (South-West: x: -7.5, z: 6.0)
+    // --- ZONA 3: REAL DINING TABLE (Meja Makan Bersama: x: -10.5, z: 0) ---
+    const diningGroup = new THREE.Group();
+    diningGroup.position.set(-10.5, 0, 0);
+
+    // Large Solid Light Oak Dining Table
+    const diningTableTop = new THREE.Mesh(
+      new THREE.BoxGeometry(4.2, 0.12, 2.2),
+      new THREE.MeshStandardMaterial({ color: 0xfde68a, roughness: 0.3 })
+    );
+    diningTableTop.position.set(0, 1.05, 0);
+    diningGroup.add(diningTableTop);
+
+    // Table legs
+    [[-1.8, -0.8], [1.8, -0.8], [-1.8, 0.8], [1.8, 0.8]].forEach(([dx, dz]) => {
+      const dleg = new THREE.Mesh(new THREE.BoxGeometry(0.12, 1.0, 0.12), new THREE.MeshStandardMaterial({ color: 0x18181b }));
+      dleg.position.set(dx, 0.52, dz);
+      diningGroup.add(dleg);
+    });
+
+    // Dining Plates & Food Bowls
+    [-1.2, 0, 1.2].forEach((px) => {
+      // Plate top
+      const plate = new THREE.Mesh(new THREE.CylinderGeometry(0.25, 0.25, 0.03, 16), new THREE.MeshStandardMaterial({ color: 0xffffff }));
+      plate.position.set(px, 1.12, -0.45);
+      diningGroup.add(plate);
+
+      // Plate bottom
+      const plate2 = new THREE.Mesh(new THREE.CylinderGeometry(0.25, 0.25, 0.03, 16), new THREE.MeshStandardMaterial({ color: 0xffffff }));
+      plate2.position.set(px, 1.12, 0.45);
+      diningGroup.add(plate2);
+    });
+
+    // Salad / Fruit Bowl in Center
+    const fruitBowl = new THREE.Mesh(new THREE.CylinderGeometry(0.4, 0.25, 0.2, 16), new THREE.MeshStandardMaterial({ color: 0xd97706 }));
+    fruitBowl.position.set(0, 1.2, 0);
+    diningGroup.add(fruitBowl);
+
+    // Dining Wooden Chairs (6 chairs)
+    const dChairMat = new THREE.MeshStandardMaterial({ color: 0xd97706, roughness: 0.5 });
+    const addDiningChair = (cx: number, cz: number, ry: number) => {
+      const ch = new THREE.Group();
+      ch.position.set(cx, 0, cz);
+      ch.rotation.y = ry;
+      const cseat = new THREE.Mesh(new THREE.BoxGeometry(0.6, 0.08, 0.55), dChairMat);
+      cseat.position.y = 0.65;
+      ch.add(cseat);
+      const cback = new THREE.Mesh(new THREE.BoxGeometry(0.6, 0.6, 0.06), dChairMat);
+      cback.position.set(0, 0.95, -0.24);
+      ch.add(cback);
+      [[-0.24, -0.22], [0.24, -0.22], [-0.24, 0.22], [0.24, 0.22]].forEach(([lx, lz]) => {
+        const leg = new THREE.Mesh(new THREE.CylinderGeometry(0.03, 0.03, 0.65, 8), metalMullion);
+        leg.position.set(lx, 0.325, lz);
+        ch.add(leg);
+      });
+      diningGroup.add(ch);
+    };
+    addDiningChair(-1.2, -1.4, 0);
+    addDiningChair(0, -1.4, 0);
+    addDiningChair(1.2, -1.4, 0);
+    addDiningChair(-1.2, 1.4, Math.PI);
+    addDiningChair(0, 1.4, Math.PI);
+    addDiningChair(1.2, 1.4, Math.PI);
+
+    scene.add(diningGroup);
+
+    // --- ZONA 4: STARTUP GYM & FITNESS CORNER (South-East: x: 10.5, z: 7.5) ---
+    const gymGroup = new THREE.Group();
+    gymGroup.position.set(10.5, 0, 7.5);
+
+    // Rubber Gym Floor Mat
+    const gymMat = new THREE.Mesh(
+      new THREE.BoxGeometry(7.5, 0.03, 6.5),
+      new THREE.MeshStandardMaterial({ color: 0x18181b, roughness: 0.9 })
+    );
+    gymMat.position.y = 0.015;
+    gymGroup.add(gymMat);
+
+    // 1. Treadmill Machine
+    const treadGroup = new THREE.Group();
+    treadGroup.position.set(-2.0, 0, 0.5);
+
+    const treadBase = new THREE.Mesh(new THREE.BoxGeometry(1.2, 0.25, 2.4), new THREE.MeshStandardMaterial({ color: 0x334155 }));
+    treadBase.position.y = 0.125;
+    treadGroup.add(treadBase);
+
+    const treadBelt = new THREE.Mesh(new THREE.BoxGeometry(0.9, 0.02, 2.0), new THREE.MeshStandardMaterial({ color: 0x090d16 }));
+    treadBelt.position.set(0, 0.26, -0.1);
+    treadGroup.add(treadBelt);
+
+    const treadHandL = new THREE.Mesh(new THREE.CylinderGeometry(0.04, 0.04, 1.4, 8), metalMullion);
+    treadHandL.position.set(-0.55, 0.8, -0.9);
+    treadGroup.add(treadHandL);
+    const treadHandR = new THREE.Mesh(new THREE.CylinderGeometry(0.04, 0.04, 1.4, 8), metalMullion);
+    treadHandR.position.set(0.55, 0.8, -0.9);
+    treadGroup.add(treadHandR);
+
+    const treadDash = new THREE.Mesh(new THREE.BoxGeometry(1.2, 0.15, 0.4), new THREE.MeshStandardMaterial({ color: 0x090d16 }));
+    treadDash.position.set(0, 1.5, -0.9);
+    treadGroup.add(treadDash);
+
+    gymGroup.add(treadGroup);
+
+    // 2. Dumbbell Weight Rack with Hex Dumbbells
+    const dRackGroup = new THREE.Group();
+    dRackGroup.position.set(2.2, 0, -1.8);
+
+    const rackFrame = new THREE.Mesh(new THREE.BoxGeometry(2.4, 1.0, 0.6), new THREE.MeshStandardMaterial({ color: 0x334155, metalness: 0.8 }));
+    rackFrame.position.y = 0.5;
+    dRackGroup.add(rackFrame);
+
+    // Row of colorful dumbbells
+    const dbColors = [0xef4444, 0x3b82f6, 0xf59e0b, 0x10b981];
+    dbColors.forEach((col, idx) => {
+      const db = new THREE.Mesh(new THREE.BoxGeometry(0.35, 0.14, 0.14), new THREE.MeshStandardMaterial({ color: col }));
+      db.position.set(-0.8 + idx * 0.5, 1.08, 0);
+      dRackGroup.add(db);
+    });
+    gymGroup.add(dRackGroup);
+
+    // 3. Yoga / Exercise Ball
+    const yogaBall = new THREE.Mesh(new THREE.SphereGeometry(0.55, 16, 16), new THREE.MeshStandardMaterial({ color: 0x06b6d4, roughness: 0.3 }));
+    yogaBall.position.set(2.0, 0.55, 1.5);
+    gymGroup.add(yogaBall);
+
+    scene.add(gymGroup);
+
+    // --- ZONA 5: GAMING & BREAKOUT LOUNGE (South-West: x: -8.5, z: 8.5) ---
     const loungeGroup = new THREE.Group();
-    loungeGroup.position.set(-7.5, 0, 6.0);
+    loungeGroup.position.set(-8.5, 0, 8.5);
 
     const sofaMat = new THREE.MeshStandardMaterial({ color: 0x334155, roughness: 0.8 });
-    
-    // Main sofa bench
     const sofaMain = new THREE.Mesh(new THREE.BoxGeometry(4.4, 0.5, 1.5), sofaMat);
     sofaMain.position.set(0, 0.3, 0);
     loungeGroup.add(sofaMain);
@@ -368,7 +603,6 @@ export default function OfficeCanvas({ selectedAgentId, onSelectAgent }: OfficeC
     sofaBackMain.position.set(0, 0.9, -0.6);
     loungeGroup.add(sofaBackMain);
 
-    // L-Extension chaise
     const sofaL = new THREE.Mesh(new THREE.BoxGeometry(1.5, 0.5, 2.2), sofaMat);
     sofaL.position.set(1.45, 0.3, 1.6);
     loungeGroup.add(sofaL);
@@ -377,7 +611,6 @@ export default function OfficeCanvas({ selectedAgentId, onSelectAgent }: OfficeC
     sofaLBack.position.set(2.05, 0.9, 1.6);
     loungeGroup.add(sofaLBack);
 
-    // Cushions
     const c1 = new THREE.Mesh(new THREE.BoxGeometry(0.45, 0.45, 0.2), new THREE.MeshStandardMaterial({ color: 0xf59e0b }));
     c1.position.set(-1.4, 0.7, -0.4);
     loungeGroup.add(c1);
@@ -386,82 +619,43 @@ export default function OfficeCanvas({ selectedAgentId, onSelectAgent }: OfficeC
     c2.position.set(0.2, 0.7, -0.4);
     loungeGroup.add(c2);
 
-    // Coffee Table
-    const cTable = new THREE.Mesh(
-      new THREE.BoxGeometry(2.2, 0.35, 1.2),
-      new THREE.MeshStandardMaterial({ color: 0xfef08a, roughness: 0.4 })
-    );
+    const cTable = new THREE.Mesh(new THREE.BoxGeometry(2.2, 0.35, 1.2), new THREE.MeshStandardMaterial({ color: 0xfef08a, roughness: 0.4 }));
     cTable.position.set(-0.5, 0.2, 1.5);
     loungeGroup.add(cTable);
 
-    // PS5 White Console with Cyan Glow Bar
-    const ps5 = new THREE.Mesh(
-      new THREE.BoxGeometry(0.55, 0.12, 0.35),
-      new THREE.MeshStandardMaterial({ color: 0xf8fafc, roughness: 0.2 })
-    );
+    const ps5 = new THREE.Mesh(new THREE.BoxGeometry(0.55, 0.12, 0.35), new THREE.MeshStandardMaterial({ color: 0xf8fafc, roughness: 0.2 }));
     ps5.position.set(-0.7, 0.42, 1.5);
     loungeGroup.add(ps5);
 
-    const ps5Light = new THREE.Mesh(
-      new THREE.BoxGeometry(0.56, 0.03, 0.03),
-      new THREE.MeshBasicMaterial({ color: 0x38bdf8 })
-    );
+    const ps5Light = new THREE.Mesh(new THREE.BoxGeometry(0.56, 0.03, 0.03), new THREE.MeshBasicMaterial({ color: 0x38bdf8 }));
     ps5Light.position.set(-0.7, 0.44, 1.68);
     loungeGroup.add(ps5Light);
 
-    // PS5 DualSense Controllers on Table
-    const ctrl1 = new THREE.Mesh(
-      new THREE.BoxGeometry(0.18, 0.05, 0.12),
-      new THREE.MeshStandardMaterial({ color: 0xffffff })
-    );
-    ctrl1.position.set(-0.2, 0.4, 1.4);
-    loungeGroup.add(ctrl1);
-
-    const ctrl2 = new THREE.Mesh(
-      new THREE.BoxGeometry(0.18, 0.05, 0.12),
-      new THREE.MeshStandardMaterial({ color: 0x18181b })
-    );
-    ctrl2.position.set(0.1, 0.4, 1.4);
-    loungeGroup.add(ctrl2);
-
-    // Standing Modern Media Console & TV Unit facing sofa
+    // Media Unit & TV
     const mediaUnit = new THREE.Group();
-    mediaUnit.position.set(-0.5, 0, 4.0);
+    mediaUnit.position.set(-0.5, 0, 3.8);
 
-    const tvStand = new THREE.Mesh(
-      new THREE.BoxGeometry(3.6, 0.6, 0.8),
-      new THREE.MeshStandardMaterial({ color: 0x1e293b, roughness: 0.5 })
-    );
+    const tvStand = new THREE.Mesh(new THREE.BoxGeometry(3.6, 0.6, 0.8), new THREE.MeshStandardMaterial({ color: 0x1e293b, roughness: 0.5 }));
     tvStand.position.y = 0.3;
     mediaUnit.add(tvStand);
 
-    const tvPole = new THREE.Mesh(
-      new THREE.CylinderGeometry(0.08, 0.08, 1.2, 12),
-      new THREE.MeshStandardMaterial({ color: 0x090d16, metalness: 0.9 })
-    );
+    const tvPole = new THREE.Mesh(new THREE.CylinderGeometry(0.08, 0.08, 1.2, 12), new THREE.MeshStandardMaterial({ color: 0x090d16, metalness: 0.9 }));
     tvPole.position.set(0, 1.1, 0);
     mediaUnit.add(tvPole);
 
-    const tvFrame = new THREE.Mesh(
-      new THREE.BoxGeometry(3.4, 1.9, 0.08),
-      new THREE.MeshStandardMaterial({ color: 0x090d16 })
-    );
+    const tvFrame = new THREE.Mesh(new THREE.BoxGeometry(3.4, 1.9, 0.08), new THREE.MeshStandardMaterial({ color: 0x090d16 }));
     tvFrame.position.set(0, 2.2, 0);
     mediaUnit.add(tvFrame);
 
-    const tvScreen = new THREE.Mesh(
-      new THREE.PlaneGeometry(3.3, 1.8),
-      new THREE.MeshBasicMaterial({ map: tvTex })
-    );
+    const tvScreen = new THREE.Mesh(new THREE.PlaneGeometry(3.3, 1.8), new THREE.MeshBasicMaterial({ map: tvTex }));
     tvScreen.position.set(0, 2.2, -0.05);
-    tvScreen.rotation.y = Math.PI; // Faces toward the sofa
+    tvScreen.rotation.y = Math.PI;
     mediaUnit.add(tvScreen);
 
     loungeGroup.add(mediaUnit);
-
     scene.add(loungeGroup);
 
-    // 4. ZONA 4: OPEN WORKSTATIONS (Center Hub)
+    // --- ZONA 6: OPEN WORKSTATIONS (Center Hub) ---
     const clickableObjects: THREE.Object3D[] = [];
 
     const POD_POSITIONS: Record<string, [number, number, number]> = {
@@ -478,23 +672,20 @@ export default function OfficeCanvas({ selectedAgentId, onSelectAgent }: OfficeC
       podGroup.position.set(px, py, pz);
       podGroup.userData = { agentId };
 
-      const rug = new THREE.Mesh(
-        new THREE.BoxGeometry(3.6, 0.02, 3.2),
-        new THREE.MeshStandardMaterial({ color: 0x334155, roughness: 0.9 })
-      );
+      const rug = new THREE.Mesh(new THREE.BoxGeometry(3.6, 0.02, 3.2), new THREE.MeshStandardMaterial({ color: 0x334155, roughness: 0.9 }));
       rug.position.y = 0.01;
       rug.userData = { agentId };
       podGroup.add(rug);
       clickableObjects.push(rug);
 
-      const desk = new THREE.Mesh(
-        new THREE.BoxGeometry(2.5, 0.1, 1.3),
-        new THREE.MeshStandardMaterial({ color: 0xfef3c7, roughness: 0.3 })
-      );
+      const desk = new THREE.Mesh(new THREE.BoxGeometry(2.5, 0.1, 1.3), new THREE.MeshStandardMaterial({ color: 0xfef3c7, roughness: 0.3 }));
       desk.position.set(0, 1.05, 0);
       desk.userData = { agentId };
       podGroup.add(desk);
       clickableObjects.push(desk);
+
+      // Desk flower pot
+      createFlowerPot(podGroup, 1.05, 1.1, -0.4);
 
       const legMat = new THREE.MeshStandardMaterial({ color: 0x18181b, metalness: 0.8 });
       [[-1.1, -0.5], [1.1, -0.5], [-1.1, 0.5], [1.1, 0.5]].forEach(([lx, lz]) => {
@@ -545,10 +736,24 @@ export default function OfficeCanvas({ selectedAgentId, onSelectAgent }: OfficeC
         podGroup.add(monScreen);
       }
 
-      const chair = new THREE.Mesh(new THREE.BoxGeometry(0.75, 0.85, 0.65), new THREE.MeshStandardMaterial({ color: 0x334155, roughness: 0.7 }));
-      chair.position.set(0, 0.85, 0.95);
-      podGroup.add(chair);
+      // Proper Ergonomic Chair
+      const chairGroup = new THREE.Group();
+      chairGroup.position.set(0, 0, 0.85);
 
+      const seatMesh = new THREE.Mesh(new THREE.BoxGeometry(0.75, 0.1, 0.7), new THREE.MeshStandardMaterial({ color: 0x334155, roughness: 0.7 }));
+      seatMesh.position.y = 0.58;
+      chairGroup.add(seatMesh);
+
+      const backMesh = new THREE.Mesh(new THREE.BoxGeometry(0.7, 0.8, 0.08), new THREE.MeshStandardMaterial({ color: 0x1e293b }));
+      backMesh.position.set(0, 1.05, 0.32);
+      backMesh.rotation.x = 0.08;
+      chairGroup.add(backMesh);
+
+      const standLeg = new THREE.Mesh(new THREE.CylinderGeometry(0.04, 0.04, 0.58, 12), legMat);
+      standLeg.position.y = 0.29;
+      chairGroup.add(standLeg);
+
+      podGroup.add(chairGroup);
       scene.add(podGroup);
     };
 
@@ -558,13 +763,15 @@ export default function OfficeCanvas({ selectedAgentId, onSelectAgent }: OfficeC
     const agentsList: AgentSim[] = [];
 
     const WAYPOINTS = {
-      COFFEE: new THREE.Vector3(-8.5, 0, -5.8),
-      GAMING: new THREE.Vector3(-7.5, 0, 6.0),
+      COFFEE: new THREE.Vector3(-9.5, 0, -6.5),
+      GAMING: new THREE.Vector3(-8.5, 0, 8.2),
+      DINING: new THREE.Vector3(-10.5, 0, 0),
+      GYM: new THREE.Vector3(8.5, 0, 7.5),
       MEETING: [
-        new THREE.Vector3(6.5, 0, -6.5),
-        new THREE.Vector3(8.5, 0, -6.5),
-        new THREE.Vector3(6.5, 0, -5.0),
-        new THREE.Vector3(8.5, 0, -5.0),
+        new THREE.Vector3(8.0, 0, -8.0),
+        new THREE.Vector3(11.0, 0, -8.0),
+        new THREE.Vector3(8.0, 0, -6.5),
+        new THREE.Vector3(11.0, 0, -6.5),
       ],
     };
 
@@ -575,6 +782,8 @@ export default function OfficeCanvas({ selectedAgentId, onSelectAgent }: OfficeC
         COFFEE: 'Espresso shot dulu, persiapan strategi sore.',
         GAMING: 'Push rank FIFA sejenak, refreshing otak.',
         MEETING: 'Review sprint: roadmap kuartal tuntas.',
+        DINING: 'Makan siang bersama tim di meja makan.',
+        GYM: 'Lari di treadmill 15 menit biar fit!',
       },
       robert: {
         WORKING: 'SERP audit: 5 competitor keyword gaps ready.',
@@ -582,6 +791,8 @@ export default function OfficeCanvas({ selectedAgentId, onSelectAgent }: OfficeC
         COFFEE: 'Coffee break sambil pantau algoritma Google.',
         GAMING: 'Istirahat bentar, main game bareng tim.',
         MEETING: 'Presentasi laporan SEO kompetitor mingguan.',
+        DINING: 'Makan siang santai sambil ngobrol ringan.',
+        GYM: 'Angkat dumbbell sejenak peregangan otot.',
       },
       talia: {
         WORKING: 'Slot 8/8 draft selesai & push ke Indexing API.',
@@ -589,6 +800,8 @@ export default function OfficeCanvas({ selectedAgentId, onSelectAgent }: OfficeC
         COFFEE: 'Teh hangat biar inspirasi nulis mengalir deras.',
         GAMING: 'Santai di sofa baca feedback artikel.',
         MEETING: 'Pemaparan matriks keterbacaan konten & UU.',
+        DINING: 'Makan bersama di meja makan, suasana hangat.',
+        GYM: 'Yoga stretch santai sehabis nulis artikel.',
       },
       putra: {
         WORKING: 'WhatsApp live: 5 leads inbound dikonfirmasi.',
@@ -596,13 +809,16 @@ export default function OfficeCanvas({ selectedAgentId, onSelectAgent }: OfficeC
         COFFEE: 'Isi tenaga dulu, chat calon klien lancar jaya.',
         GAMING: 'Break time main stick PS di lounge.',
         MEETING: 'Laporan konversi invoice & CS WhatsApp.',
+        DINING: 'Santap makan siang bareng rekan kerja.',
+        GYM: 'Jogging di gym corner sebelum closing deals.',
       },
     };
 
+    // BUILD ARTICULATED REALISTIC BIPEDAL AGENTS (Articulated Hips, Knees, Arms)
     Object.keys(AGENTS).forEach((agentId, idx) => {
       const data = AGENTS[agentId];
       const [hx, hy, hz] = POD_POSITIONS[agentId];
-      const homeVec = new THREE.Vector3(hx, 0, hz + 0.95);
+      const homeVec = new THREE.Vector3(hx, 0, hz + 0.85);
 
       const agentGroup = new THREE.Group();
       agentGroup.position.copy(homeVec);
@@ -611,21 +827,31 @@ export default function OfficeCanvas({ selectedAgentId, onSelectAgent }: OfficeC
       const charMesh = new THREE.Group();
 
       const pantsMat = new THREE.MeshStandardMaterial({ color: 0x1e293b, roughness: 0.8 });
-      const hips = new THREE.Mesh(new THREE.BoxGeometry(0.5, 0.22, 0.4), pantsMat);
-      hips.position.y = 0.85;
-      charMesh.add(hips);
-
       const shirtMat = new THREE.MeshStandardMaterial({ color: data.accentHex, roughness: 0.6 });
-      const torso = new THREE.Mesh(new THREE.BoxGeometry(0.54, 0.65, 0.36), shirtMat);
-      torso.position.y = 1.25;
+      const skinMat = new THREE.MeshStandardMaterial({ color: 0xffdfba, roughness: 0.4 });
+
+      // Pelvis / Hips Center
+      const pelvis = new THREE.Mesh(new THREE.BoxGeometry(0.52, 0.2, 0.38), pantsMat);
+      pelvis.position.y = 0.65;
+      charMesh.add(pelvis);
+
+      // Torso
+      const torso = new THREE.Mesh(new THREE.BoxGeometry(0.54, 0.62, 0.36), shirtMat);
+      torso.position.y = 1.05;
       charMesh.add(torso);
 
+      // White collar
+      const collar = new THREE.Mesh(new THREE.BoxGeometry(0.24, 0.08, 0.04), new THREE.MeshStandardMaterial({ color: 0xffffff }));
+      collar.position.set(0, 1.35, -0.18);
+      charMesh.add(collar);
+
+      // Head
       const headGroup = new THREE.Group();
-      headGroup.position.y = 1.75;
-      const skinMat = new THREE.MeshStandardMaterial({ color: 0xffdfba, roughness: 0.4 });
+      headGroup.position.y = 1.55;
       const head = new THREE.Mesh(new THREE.BoxGeometry(0.36, 0.36, 0.36), skinMat);
       headGroup.add(head);
 
+      // Hair
       const hairMat = new THREE.MeshStandardMaterial({ color: idx === 1 ? 0x451a03 : 0x18181b, roughness: 0.5 });
       const hair = new THREE.Mesh(new THREE.BoxGeometry(0.4, 0.14, 0.4), hairMat);
       hair.position.y = 0.22;
@@ -633,41 +859,62 @@ export default function OfficeCanvas({ selectedAgentId, onSelectAgent }: OfficeC
 
       charMesh.add(headGroup);
 
+      // Arms (Shoulder pivots)
       const leftArm = new THREE.Group();
-      leftArm.position.set(-0.35, 1.45, 0);
-      const lArmMesh = new THREE.Mesh(new THREE.BoxGeometry(0.14, 0.5, 0.14), shirtMat);
-      lArmMesh.position.y = -0.25;
+      leftArm.position.set(-0.35, 1.25, 0);
+      const lArmMesh = new THREE.Mesh(new THREE.BoxGeometry(0.14, 0.45, 0.14), shirtMat);
+      lArmMesh.position.y = -0.225;
       leftArm.add(lArmMesh);
       charMesh.add(leftArm);
 
       const rightArm = new THREE.Group();
-      rightArm.position.set(0.35, 1.45, 0);
-      const rArmMesh = new THREE.Mesh(new THREE.BoxGeometry(0.14, 0.5, 0.14), shirtMat);
-      rArmMesh.position.y = -0.25;
+      rightArm.position.set(0.35, 1.25, 0);
+      const rArmMesh = new THREE.Mesh(new THREE.BoxGeometry(0.14, 0.45, 0.14), shirtMat);
+      rArmMesh.position.y = -0.225;
       rightArm.add(rArmMesh);
       charMesh.add(rightArm);
 
-      const leftLeg = new THREE.Group();
-      leftLeg.position.set(-0.16, 0.8, 0);
-      const lLegMesh = new THREE.Mesh(new THREE.BoxGeometry(0.18, 0.75, 0.2), pantsMat);
-      lLegMesh.position.y = -0.375;
-      leftLeg.add(lLegMesh);
-      charMesh.add(leftLeg);
+      // Legs: ARTICULATED HIPS & KNEES (Natural Sitting at 90 degrees!)
+      // Left Thigh
+      const leftThigh = new THREE.Group();
+      leftThigh.position.set(-0.16, 0.6, 0);
+      const lThighMesh = new THREE.Mesh(new THREE.BoxGeometry(0.18, 0.42, 0.2), pantsMat);
+      lThighMesh.position.y = -0.21;
+      leftThigh.add(lThighMesh);
 
-      const rightLeg = new THREE.Group();
-      rightLeg.position.set(0.16, 0.8, 0);
-      const rLegMesh = new THREE.Mesh(new THREE.BoxGeometry(0.18, 0.75, 0.2), pantsMat);
-      rLegMesh.position.y = -0.375;
-      rightLeg.add(rLegMesh);
-      charMesh.add(rightLeg);
+      // Left Knee / Shin
+      const leftShin = new THREE.Group();
+      leftShin.position.set(0, -0.42, 0);
+      const lShinMesh = new THREE.Mesh(new THREE.BoxGeometry(0.16, 0.42, 0.18), pantsMat);
+      lShinMesh.position.y = -0.21;
+      leftShin.add(lShinMesh);
+      leftThigh.add(leftShin);
+      charMesh.add(leftThigh);
+
+      // Right Thigh
+      const rightThigh = new THREE.Group();
+      rightThigh.position.set(0.16, 0.6, 0);
+      const rThighMesh = new THREE.Mesh(new THREE.BoxGeometry(0.18, 0.42, 0.2), pantsMat);
+      rThighMesh.position.y = -0.21;
+      rightThigh.add(rThighMesh);
+
+      // Right Knee / Shin
+      const rightShin = new THREE.Group();
+      rightShin.position.set(0, -0.42, 0);
+      const rShinMesh = new THREE.Mesh(new THREE.BoxGeometry(0.16, 0.42, 0.18), pantsMat);
+      rShinMesh.position.y = -0.21;
+      rightShin.add(rShinMesh);
+      rightThigh.add(rightShin);
+      charMesh.add(rightThigh);
 
       agentGroup.add(charMesh);
 
+      // Initial Speech Bubble
       const initialText = STATE_SPEECHES[agentId].WORKING;
       const bTex = createBubbleTexture(data.name, data.role, initialText, data.color);
       const bSprite = new THREE.Sprite(new THREE.SpriteMaterial({ map: bTex, transparent: true }));
       bSprite.scale.set(3.4, 1.25, 1.0);
-      bSprite.position.set(0, 2.7, 0);
+      bSprite.position.set(0, 2.5, 0);
       agentGroup.add(bSprite);
 
       clickableObjects.push(torso);
@@ -692,14 +939,17 @@ export default function OfficeCanvas({ selectedAgentId, onSelectAgent }: OfficeC
         head: headGroup,
         leftArm,
         rightArm,
-        leftLeg,
-        rightLeg,
+        leftThigh,
+        rightThigh,
+        leftShin,
+        rightShin,
         bubbleSprite: bSprite,
         currentText: initialText,
         isSeated: true,
       });
     });
 
+    // RAYCASTER DRAG VS CLICK
     const raycaster = new THREE.Raycaster();
     const mouse = new THREE.Vector2();
     let pointerDownPos = { x: 0, y: 0 };
@@ -745,6 +995,7 @@ export default function OfficeCanvas({ selectedAgentId, onSelectAgent }: OfficeC
     };
     window.addEventListener('resize', handleResize);
 
+    // 60 FPS RENDER LOOP + BEHAVIOR STATE MACHINE
     let animId: number;
     let t = 0;
 
@@ -761,20 +1012,28 @@ export default function OfficeCanvas({ selectedAgentId, onSelectAgent }: OfficeC
       }
       controls.update();
 
+      // SIMULATE AGENTS (Walking, Coffee, Gaming, Meeting, Dining, Gym)
       agentsList.forEach((agent, i) => {
         agent.stateTimer -= 1;
 
         if (agent.stateTimer <= 0) {
           if (agent.state === 'WORKING') {
             const roll = Math.random();
-            if (roll < 0.35) {
+            if (roll < 0.22) {
               agent.state = 'WALKING';
               agent.targetPos.copy(WAYPOINTS.COFFEE);
               agent.targetPos.x += (Math.random() - 0.5) * 1.5;
-            } else if (roll < 0.70) {
+            } else if (roll < 0.44) {
               agent.state = 'WALKING';
               agent.targetPos.copy(WAYPOINTS.GAMING);
               agent.targetPos.x += (Math.random() - 0.5) * 1.5;
+            } else if (roll < 0.66) {
+              agent.state = 'WALKING';
+              agent.targetPos.copy(WAYPOINTS.DINING);
+              agent.targetPos.z += (Math.random() - 0.5) * 1.5;
+            } else if (roll < 0.85) {
+              agent.state = 'WALKING';
+              agent.targetPos.copy(WAYPOINTS.GYM);
             } else {
               agent.state = 'WALKING';
               agent.targetPos.copy(WAYPOINTS.MEETING[i % 4]);
@@ -785,10 +1044,19 @@ export default function OfficeCanvas({ selectedAgentId, onSelectAgent }: OfficeC
             if (agent.targetPos.distanceTo(WAYPOINTS.COFFEE) < 3.0) {
               agent.state = 'COFFEE';
               agent.stateTimer = 400 + Math.random() * 200;
+              agent.isSeated = false;
             } else if (agent.targetPos.distanceTo(WAYPOINTS.GAMING) < 3.0) {
               agent.state = 'GAMING';
               agent.stateTimer = 450 + Math.random() * 200;
               agent.isSeated = true;
+            } else if (agent.targetPos.distanceTo(WAYPOINTS.DINING) < 3.0) {
+              agent.state = 'DINING';
+              agent.stateTimer = 450 + Math.random() * 200;
+              agent.isSeated = true;
+            } else if (agent.targetPos.distanceTo(WAYPOINTS.GYM) < 3.0) {
+              agent.state = 'GYM';
+              agent.stateTimer = 400 + Math.random() * 200;
+              agent.isSeated = false;
             } else {
               agent.state = 'MEETING';
               agent.stateTimer = 400 + Math.random() * 200;
@@ -810,6 +1078,7 @@ export default function OfficeCanvas({ selectedAgentId, onSelectAgent }: OfficeC
           }
         }
 
+        // MOVEMENT & ARTICULATED POSTURE LOGIC
         if (agent.state === 'WALKING') {
           const moveDir = new THREE.Vector3().subVectors(agent.targetPos, agent.currentPos);
           const dist = moveDir.length();
@@ -818,46 +1087,101 @@ export default function OfficeCanvas({ selectedAgentId, onSelectAgent }: OfficeC
             moveDir.normalize();
             agent.currentPos.addScaledVector(moveDir, 0.045);
             agent.group.position.copy(agent.currentPos);
-
             agent.group.rotation.y = Math.atan2(moveDir.x, moveDir.z);
 
+            // Natural Standing Walk Cycle
             const walkSpeed = 8.0;
-            agent.leftLeg.rotation.x = Math.sin(t * walkSpeed) * 0.55;
-            agent.rightLeg.rotation.x = -Math.sin(t * walkSpeed) * 0.55;
+            agent.leftThigh.rotation.x = Math.sin(t * walkSpeed) * 0.55;
+            agent.rightThigh.rotation.x = -Math.sin(t * walkSpeed) * 0.55;
+            agent.leftShin.rotation.x = Math.max(0, -Math.sin(t * walkSpeed) * 0.5);
+            agent.rightShin.rotation.x = Math.max(0, Math.sin(t * walkSpeed) * 0.5);
+
             agent.leftArm.rotation.x = -Math.sin(t * walkSpeed) * 0.45;
             agent.rightArm.rotation.x = Math.sin(t * walkSpeed) * 0.45;
             agent.charMesh.position.y = Math.abs(Math.sin(t * walkSpeed)) * 0.08;
           } else {
             agent.stateTimer = 0;
-            agent.leftLeg.rotation.x = 0;
-            agent.rightLeg.rotation.x = 0;
+            agent.leftThigh.rotation.x = 0;
+            agent.rightThigh.rotation.x = 0;
+            agent.leftShin.rotation.x = 0;
+            agent.rightShin.rotation.x = 0;
           }
         } else if (agent.state === 'WORKING') {
+          // NATURAL SEATED POSTURE: Thighs bent 90 deg forward, Shins 90 deg down to floor!
           agent.group.rotation.y = 0;
-          agent.charMesh.position.y = -0.15;
+          agent.charMesh.position.y = 0;
 
+          agent.leftThigh.rotation.x = -Math.PI / 2;
+          agent.rightThigh.rotation.x = -Math.PI / 2;
+          agent.leftShin.rotation.x = Math.PI / 2;
+          agent.rightShin.rotation.x = Math.PI / 2;
+
+          // Typing arms
           agent.leftArm.rotation.x = 0.5 + Math.sin(t * 10 + i) * 0.15;
           agent.rightArm.rotation.x = 0.5 + Math.cos(t * 10 + i * 1.5) * 0.15;
           agent.head.rotation.y = Math.sin(t * 0.8 + i) * 0.08;
         } else if (agent.state === 'GAMING') {
-          agent.group.rotation.y = 0; // Face TV directly in front of sofa
-          agent.charMesh.position.y = -0.18;
+          // Seated on sofa facing TV
+          agent.group.rotation.y = 0;
+          agent.charMesh.position.y = -0.1;
 
-          agent.leftArm.rotation.x = 0.8 + Math.sin(t * 4) * 0.05;
-          agent.rightArm.rotation.x = 0.8 + Math.cos(t * 4) * 0.05;
+          agent.leftThigh.rotation.x = -Math.PI / 2.2;
+          agent.rightThigh.rotation.x = -Math.PI / 2.2;
+          agent.leftShin.rotation.x = Math.PI / 2.2;
+          agent.rightShin.rotation.x = Math.PI / 2.2;
+
+          // Holding PS5 Controller
+          agent.leftArm.rotation.x = 0.75 + Math.sin(t * 4) * 0.05;
+          agent.rightArm.rotation.x = 0.75 + Math.cos(t * 4) * 0.05;
+        } else if (agent.state === 'DINING') {
+          // Seated at Dining Table
+          agent.group.rotation.y = Math.PI / 2;
+          agent.charMesh.position.y = 0;
+
+          agent.leftThigh.rotation.x = -Math.PI / 2;
+          agent.rightThigh.rotation.x = -Math.PI / 2;
+          agent.leftShin.rotation.x = Math.PI / 2;
+          agent.rightShin.rotation.x = Math.PI / 2;
+
+          // Eating motion
+          agent.rightArm.rotation.x = 0.6 + Math.sin(t * 3) * 0.2;
+          agent.leftArm.rotation.x = 0.4;
+        } else if (agent.state === 'GYM') {
+          // Standing / jogging on treadmill
+          agent.group.rotation.y = Math.PI;
+          const jogSpeed = 12.0;
+          agent.leftThigh.rotation.x = Math.sin(t * jogSpeed) * 0.6;
+          agent.rightThigh.rotation.x = -Math.sin(t * jogSpeed) * 0.6;
+          agent.leftShin.rotation.x = Math.max(0, -Math.sin(t * jogSpeed) * 0.7);
+          agent.rightShin.rotation.x = Math.max(0, Math.sin(t * jogSpeed) * 0.7);
+
+          agent.leftArm.rotation.x = -Math.sin(t * jogSpeed) * 0.6;
+          agent.rightArm.rotation.x = Math.sin(t * jogSpeed) * 0.6;
+          agent.charMesh.position.y = Math.abs(Math.sin(t * jogSpeed)) * 0.1;
         } else if (agent.state === 'COFFEE') {
           agent.group.rotation.y = -Math.PI / 2;
           agent.charMesh.position.y = 0;
+
+          agent.leftThigh.rotation.x = 0;
+          agent.rightThigh.rotation.x = 0;
+          agent.leftShin.rotation.x = 0;
+          agent.rightShin.rotation.x = 0;
 
           agent.rightArm.rotation.x = 0.6 + Math.sin(t * 2) * 0.2;
           agent.leftArm.rotation.x = 0.1;
         } else if (agent.state === 'MEETING') {
           agent.group.rotation.y = Math.PI / 2;
-          agent.charMesh.position.y = -0.15;
+          agent.charMesh.position.y = 0;
+
+          agent.leftThigh.rotation.x = -Math.PI / 2;
+          agent.rightThigh.rotation.x = -Math.PI / 2;
+          agent.leftShin.rotation.x = Math.PI / 2;
+          agent.rightShin.rotation.x = Math.PI / 2;
+
           agent.head.rotation.y = Math.sin(t * 1.2) * 0.15;
         }
 
-        agent.bubbleSprite.position.y = 2.7 + Math.sin(t * 2 + i) * 0.08;
+        agent.bubbleSprite.position.y = 2.5 + Math.sin(t * 2 + i) * 0.08;
       });
 
       renderer.render(scene, camera);
@@ -892,7 +1216,7 @@ export default function OfficeCanvas({ selectedAgentId, onSelectAgent }: OfficeC
       targetCamLook.current.set(ax, ay + 1.1, az);
       isTransitioning.current = true;
     } else {
-      targetCamPos.current.set(16, 20, 24);
+      targetCamPos.current.set(18, 22, 26);
       targetCamLook.current.set(0, 1.0, 0);
       isTransitioning.current = true;
     }
