@@ -1276,10 +1276,11 @@ export default function OfficeCanvas({ selectedAgentId, onSelectAgent }: OfficeC
           agent.charMesh.position.y = 0;
           agent.group.rotation.y = agentTargetYaws[agent.id]; // Locked orientation!
 
-          agent.leftThigh.rotation.x = -Math.PI / 2;
-          agent.rightThigh.rotation.x = -Math.PI / 2;
-          agent.leftShin.rotation.x = Math.PI / 2;
-          agent.rightShin.rotation.x = Math.PI / 2;
+          // Natural Sitting: Thighs forward (+X 90 deg), Shins down to floor (-X 90 deg)
+          agent.leftThigh.rotation.x = Math.PI / 2;
+          agent.rightThigh.rotation.x = Math.PI / 2;
+          agent.leftShin.rotation.x = -Math.PI / 2;
+          agent.rightShin.rotation.x = -Math.PI / 2;
 
           if (agent.state === 'WORKING') {
             agent.leftArm.rotation.x = 0.5 + Math.sin(t * 10 + i) * 0.15;
@@ -1302,8 +1303,8 @@ export default function OfficeCanvas({ selectedAgentId, onSelectAgent }: OfficeC
           const jogSpeed = 12.0;
           agent.leftThigh.rotation.x = Math.sin(t * jogSpeed) * 0.6;
           agent.rightThigh.rotation.x = -Math.sin(t * jogSpeed) * 0.6;
-          agent.leftShin.rotation.x = Math.max(0, -Math.sin(t * jogSpeed) * 0.7);
-          agent.rightShin.rotation.x = Math.max(0, Math.sin(t * jogSpeed) * 0.7);
+          agent.leftShin.rotation.x = Math.max(0, Math.sin(t * jogSpeed) * 0.7);
+          agent.rightShin.rotation.x = Math.max(0, -Math.sin(t * jogSpeed) * 0.7);
           agent.leftArm.rotation.x = -Math.sin(t * jogSpeed) * 0.6;
           agent.rightArm.rotation.x = Math.sin(t * jogSpeed) * 0.6;
           agent.charMesh.position.y = Math.abs(Math.sin(t * jogSpeed)) * 0.1;
