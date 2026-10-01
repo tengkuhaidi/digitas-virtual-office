@@ -11,99 +11,88 @@ interface OfficeCanvasProps {
 
 export default function OfficeCanvas({ selectedAgentId, onSelectAgent }: OfficeCanvasProps) {
   const mountRef = useRef<HTMLDivElement>(null);
-  const targetCamPos = useRef(new THREE.Vector3(0, 14, 18));
+  const targetCamPos = useRef(new THREE.Vector3(0, 15, 20));
   const targetCamLook = useRef(new THREE.Vector3(0, 0, 0));
 
   useEffect(() => {
     if (!mountRef.current) return;
 
+    // MEASURE REAL CONTAINER DIMENSIONS
+    let width = mountRef.current.clientWidth || window.innerWidth || 1200;
+    let height = mountRef.current.clientHeight || window.innerHeight || 800;
+
     // SCENE SETUP
     const scene = new THREE.Scene();
-    scene.background = new THREE.Color(0x090a10);
-    scene.fog = new THREE.FogExp2(0x090a10, 0.025);
+    scene.background = new THREE.Color(0x0b0d14);
 
-    const width = mountRef.current.clientWidth;
-    const height = mountRef.current.clientHeight;
-
-    // CAMERA (Isometric-like perspective)
-    const camera = new THREE.PerspectiveCamera(38, width / height, 0.1, 1000);
-    camera.position.set(0, 14, 18);
+    // CAMERA (Isometric angle)
+    const camera = new THREE.PerspectiveCamera(40, width / height, 0.1, 1000);
+    camera.position.set(0, 15, 20);
     camera.lookAt(0, 0, 0);
 
-    // RENDERER
-    const renderer = new THREE.WebGLRenderer({ antialias: true, alpha: false });
+    // RENDERER - SAFE WEBGL (Disable complex shadows that cause GL_INVALID_FRAMEBUFFER_OPERATION)
+    const renderer = new THREE.WebGLRenderer({
+      antialias: true,
+      powerPreference: 'high-performance',
+      alpha: false,
+    });
     renderer.setSize(width, height);
-    renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
-    renderer.shadowMap.enabled = true;
-    renderer.shadowMap.type = THREE.PCFSoftShadowMap;
-    renderer.toneMapping = THREE.ACESFilmicToneMapping;
-    renderer.toneMappingExposure = 1.1;
+    renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, 2));
 
     mountRef.current.appendChild(renderer.domElement);
 
-    // LIGHTING
-    const ambientLight = new THREE.AmbientLight(0xffffff, 0.85);
-    scene.add(ambientLight);
+    // BRIGHT & VIBRANT LIGHTING
+    const hemiLight = new THREE.HemisphereLight(0xffffff, 0x1e293b, 1.2);
+    scene.add(hemiLight);
 
-    const mainDirectional = new THREE.DirectionalLight(0xe2e8f0, 1.4);
-    mainDirectional.position.set(12, 20, 10);
-    mainDirectional.castShadow = true;
-    mainDirectional.shadow.mapSize.width = 2048;
-    mainDirectional.shadow.mapSize.height = 2048;
-    mainDirectional.shadow.camera.near = 0.5;
-    mainDirectional.shadow.camera.far = 50;
-    mainDirectional.shadow.bias = -0.0005;
-    scene.add(mainDirectional);
+    const dirLight1 = new THREE.DirectionalLight(0xffffff, 1.5);
+    dirLight1.position.set(15, 25, 15);
+    scene.add(dirLight1);
 
-    // BLUE AMBIENT ACCENT LIGHT
-    const bluePoint = new THREE.PointLight(0x38bdf8, 2.5, 25);
-    bluePoint.position.set(0, 5, 0);
-    scene.add(bluePoint);
+    const dirLight2 = new THREE.DirectionalLight(0x38bdf8, 0.8);
+    dirLight2.position.set(-15, 15, -10);
+    scene.add(dirLight2);
 
-    // ROOM FLOOR (Dark obsidian concrete)
-    const floorGeo = new THREE.PlaneGeometry(32, 32);
+    // FLOOR (Tech Grid Platform)
+    const floorGeo = new THREE.BoxGeometry(26, 0.4, 26);
     const floorMat = new THREE.MeshStandardMaterial({
-      color: 0x0f1118,
-      roughness: 0.7,
+      color: 0x111625,
+      roughness: 0.6,
       metalness: 0.2,
     });
     const floor = new THREE.Mesh(floorGeo, floorMat);
-    floor.rotation.x = -Math.PI / 2;
-    floor.receiveShadow = true;
+    floor.position.y = -0.2;
     scene.add(floor);
 
-    // GRID ACCENT ON FLOOR
-    const gridHelper = new THREE.GridHelper(30, 30, 0x1e293b, 0x131926);
-    gridHelper.position.y = 0.01;
-    scene.add(gridHelper);
+    // FLOOR GRID LINES
+    const grid = new THREE.GridHelper(26, 26, 0x3b82f6, 0x1e293b);
+    grid.position.y = 0.02;
+    scene.add(grid);
 
-    // GLASS RAILING / PERIMETER WALLS (Translucent)
-    const wallMat = new THREE.MeshPhysicalMaterial({
-      color: 0x334155,
-      transparent: true,
-      opacity: 0.25,
-      roughness: 0.1,
-      transmission: 0.6,
-      thickness: 0.5,
-    });
+    // PERIMETER NEON BORDER
+    const borderGeo = new THREE.BoxGeometry(26.2, 0.1, 0.15);
+    const borderMat = new THREE.MeshBasicMaterial({ color: 0x38bdf8 });
+    const b1 = new THREE.Mesh(borderGeo, borderMat);
+    b1.position.set(0, 0.05, 13);
+    scene.add(b1);
+    const b2 = new THREE.Mesh(borderGeo, borderMat);
+    b2.position.set(0, 0.05, -13);
+    scene.add(b2);
 
-    const createBorder = (w: number, h: number, d: number, x: number, y: number, z: number) => {
-      const g = new THREE.BoxGeometry(w, h, d);
-      const m = new THREE.Mesh(g, wallMat);
-      m.position.set(x, y, z);
-      scene.add(m);
-    };
-    createBorder(30, 1.2, 0.2, 0, 0.6, -15);
-    createBorder(30, 1.2, 0.2, 0, 0.6, 15);
-    createBorder(0.2, 1.2, 30, -15, 0.6, 0);
-    createBorder(0.2, 1.2, 30, 15, 0.6, 0);
+    const borderSideGeo = new THREE.BoxGeometry(0.15, 0.1, 26.2);
+    const b3 = new THREE.Mesh(borderSideGeo, borderMat);
+    b3.position.set(13, 0.05, 0);
+    scene.add(b3);
+    const b4 = new THREE.Mesh(borderSideGeo, borderMat);
+    b4.position.set(-13, 0.05, 0);
+    scene.add(b4);
 
-    // INTERACTIVE OBJECTS MAP
+    // INTERACTIVE OBJECTS & ANIMATION LIST
     const clickableObjects: THREE.Object3D[] = [];
-    const pulsingMeshes: { mesh: THREE.Mesh; baseScale: number }[] = [];
     const rotatingObjects: THREE.Object3D[] = [];
+    const pulsingMeshes: { mesh: THREE.Mesh; baseScale: number }[] = [];
 
-    // HELPER: BUILD WORKSTATION POD
+    // BUILD WORKSTATION POD PER AGENT
     const createPod = (agentId: string) => {
       const data = AGENTS[agentId];
       const [px, py, pz] = data.podCoordinates;
@@ -111,195 +100,186 @@ export default function OfficeCanvas({ selectedAgentId, onSelectAgent }: OfficeC
       podGroup.position.set(px, py, pz);
       podGroup.userData = { agentId };
 
-      // POD BASE PLATFORM (Raised circular disc)
-      const baseGeo = new THREE.CylinderGeometry(2.4, 2.6, 0.15, 32);
+      // CYLINDER BASE POD
+      const baseGeo = new THREE.CylinderGeometry(2.4, 2.5, 0.25, 32);
       const baseMat = new THREE.MeshStandardMaterial({
-        color: 0x181c27,
-        roughness: 0.4,
+        color: 0x1a2133,
+        roughness: 0.3,
         metalness: 0.5,
       });
       const baseMesh = new THREE.Mesh(baseGeo, baseMat);
-      baseMesh.position.y = 0.075;
-      baseMesh.receiveShadow = true;
+      baseMesh.position.y = 0.125;
       baseMesh.userData = { agentId };
       podGroup.add(baseMesh);
       clickableObjects.push(baseMesh);
 
       // ACCENT NEON RING
-      const ringGeo = new THREE.RingGeometry(2.1, 2.25, 32);
+      const ringGeo = new THREE.RingGeometry(2.0, 2.3, 32);
       const ringMat = new THREE.MeshBasicMaterial({
         color: data.accentHex,
         side: THREE.DoubleSide,
       });
-      const ringMesh = new THREE.Mesh(ringGeo, ringMat);
-      ringMesh.rotation.x = -Math.PI / 2;
-      ringMesh.position.y = 0.16;
-      podGroup.add(ringMesh);
+      const ring = new THREE.Mesh(ringGeo, ringMat);
+      ring.rotation.x = -Math.PI / 2;
+      ring.position.y = 0.26;
+      podGroup.add(ring);
 
-      // DESK
-      const deskGeo = new THREE.BoxGeometry(2.2, 0.08, 1.1);
+      // MAIN DESK
+      const deskGeo = new THREE.BoxGeometry(2.2, 0.1, 1.2);
       const deskMat = new THREE.MeshStandardMaterial({
-        color: 0x222736,
+        color: 0x273147,
         roughness: 0.3,
-        metalness: 0.4,
       });
       const desk = new THREE.Mesh(deskGeo, deskMat);
-      desk.position.set(0, 0.9, 0);
-      desk.castShadow = true;
-      desk.receiveShadow = true;
+      desk.position.set(0, 1.0, 0);
       desk.userData = { agentId };
       podGroup.add(desk);
       clickableObjects.push(desk);
 
-      // DESK LEGS (Metal)
-      const legGeo = new THREE.CylinderGeometry(0.04, 0.04, 0.85);
-      const legMat = new THREE.MeshStandardMaterial({ color: 0x475569, metalness: 0.8 });
+      // DESK LEGS (Metal Chrome)
+      const legGeo = new THREE.CylinderGeometry(0.04, 0.04, 0.95);
+      const legMat = new THREE.MeshStandardMaterial({ color: 0x94a3b8, metalness: 0.8 });
       [[-0.95, -0.45], [0.95, -0.45], [-0.95, 0.45], [0.95, 0.45]].forEach(([lx, lz]) => {
         const leg = new THREE.Mesh(legGeo, legMat);
-        leg.position.set(lx, 0.45, lz);
-        leg.castShadow = true;
+        leg.position.set(lx, 0.5, lz);
         podGroup.add(leg);
       });
 
       // ERGONOMIC CHAIR
       const chairGroup = new THREE.Group();
       chairGroup.position.set(0, 0, 0.9);
-
-      const seatGeo = new THREE.BoxGeometry(0.65, 0.08, 0.65);
-      const seatMat = new THREE.MeshStandardMaterial({ color: 0x0f172a, roughness: 0.8 });
+      const seatGeo = new THREE.BoxGeometry(0.7, 0.1, 0.7);
+      const seatMat = new THREE.MeshStandardMaterial({ color: 0x0f172a });
       const seat = new THREE.Mesh(seatGeo, seatMat);
-      seat.position.y = 0.55;
+      seat.position.y = 0.65;
       chairGroup.add(seat);
 
-      const backGeo = new THREE.BoxGeometry(0.65, 0.7, 0.08);
+      const backGeo = new THREE.BoxGeometry(0.7, 0.75, 0.1);
       const back = new THREE.Mesh(backGeo, seatMat);
-      back.position.set(0, 0.9, 0.3);
+      back.position.set(0, 1.05, 0.3);
       chairGroup.add(back);
 
-      const standGeo = new THREE.CylinderGeometry(0.05, 0.05, 0.55);
+      const standGeo = new THREE.CylinderGeometry(0.06, 0.06, 0.65);
       const stand = new THREE.Mesh(standGeo, legMat);
-      stand.position.y = 0.275;
+      stand.position.y = 0.325;
       chairGroup.add(stand);
       podGroup.add(chairGroup);
 
-      // SPECIAL GEAR PER AGENT POD
+      // CHARACTER FIGURE (Stylized Minimal Low-Poly Avatar)
+      const avatarGroup = new THREE.Group();
+      avatarGroup.position.set(0, 0.7, 0.7);
+
+      // Body / Torso
+      const torsoGeo = new THREE.BoxGeometry(0.5, 0.65, 0.35);
+      const torsoMat = new THREE.MeshStandardMaterial({ color: data.accentHex });
+      const torso = new THREE.Mesh(torsoGeo, torsoMat);
+      torso.position.y = 0.55;
+      avatarGroup.add(torso);
+
+      // Head
+      const headGeo = new THREE.SphereGeometry(0.2, 16, 16);
+      const headMat = new THREE.MeshStandardMaterial({ color: 0xfde047 });
+      const head = new THREE.Mesh(headGeo, headMat);
+      head.position.y = 1.05;
+      avatarGroup.add(head);
+
+      podGroup.add(avatarGroup);
+
+      // SPECIFIC WORK GEAR PER AGENT
       if (agentId === 'gajahmada') {
-        // Holographic Rotating Wireframe Globe on Desk
-        const globeGeo = new THREE.SphereGeometry(0.35, 16, 16);
+        // Holographic Wireframe Command Globe
+        const globeGeo = new THREE.SphereGeometry(0.42, 16, 16);
         const globeMat = new THREE.MeshBasicMaterial({
           color: 0xf59e0b,
           wireframe: true,
-          transparent: true,
-          opacity: 0.85,
         });
         const globe = new THREE.Mesh(globeGeo, globeMat);
-        globe.position.set(0, 1.45, -0.1);
+        globe.position.set(0, 1.6, -0.1);
         podGroup.add(globe);
         rotatingObjects.push(globe);
 
-        // Mini Server Rack Behind Desk
-        const rackGeo = new THREE.BoxGeometry(0.9, 2.0, 0.6);
-        const rackMat = new THREE.MeshStandardMaterial({ color: 0x0b0f19, roughness: 0.5 });
+        // Server Rack in background
+        const rackGeo = new THREE.BoxGeometry(1.0, 2.2, 0.6);
+        const rackMat = new THREE.MeshStandardMaterial({ color: 0x0f172a, roughness: 0.5 });
         const rack = new THREE.Mesh(rackGeo, rackMat);
-        rack.position.set(1.5, 1.0, -0.8);
-        rack.castShadow = true;
+        rack.position.set(1.6, 1.1, -0.6);
         podGroup.add(rack);
 
-        // Blinking LED dots on rack
-        for (let r = 0; r < 5; r++) {
-          const ledGeo = new THREE.SphereGeometry(0.03, 8, 8);
-          const ledMat = new THREE.MeshBasicMaterial({ color: r % 2 === 0 ? 0x10b981 : 0x38bdf8 });
-          const led = new THREE.Mesh(ledGeo, ledMat);
-          led.position.set(1.15, 0.5 + r * 0.3, -0.48);
+        // Server LED lights
+        for (let l = 0; l < 6; l++) {
+          const led = new THREE.Mesh(
+            new THREE.BoxGeometry(0.08, 0.05, 0.02),
+            new THREE.MeshBasicMaterial({ color: l % 2 === 0 ? 0x10b981 : 0x38bdf8 })
+          );
+          led.position.set(1.2, 0.4 + l * 0.3, -0.28);
           podGroup.add(led);
         }
       } else if (agentId === 'robert') {
-        // Dual Curved Ultrawide Monitors
-        const monGeo = new THREE.BoxGeometry(0.9, 0.55, 0.04);
-        const monMat = new THREE.MeshStandardMaterial({ color: 0x090d16 });
-        const mon1 = new THREE.Mesh(monGeo, monMat);
-        mon1.position.set(-0.5, 1.3, -0.2);
-        mon1.rotation.y = 0.2;
+        // Dual Ultrawide Monitors
+        const monMat = new THREE.MeshBasicMaterial({ color: 0x1e3a8a });
+        const mon1 = new THREE.Mesh(new THREE.BoxGeometry(0.85, 0.5, 0.04), monMat);
+        mon1.position.set(-0.5, 1.45, -0.25);
+        mon1.rotation.y = 0.25;
         podGroup.add(mon1);
 
-        const screenGeo = new THREE.PlaneGeometry(0.85, 0.5);
-        const screenMat = new THREE.MeshBasicMaterial({ color: 0x1e3a8a });
-        const screen1 = new THREE.Mesh(screenGeo, screenMat);
-        screen1.position.set(-0.5, 1.3, -0.17);
-        screen1.rotation.y = 0.2;
-        podGroup.add(screen1);
-
-        const mon2 = new THREE.Mesh(monGeo, monMat);
-        mon2.position.set(0.5, 1.3, -0.2);
-        mon2.rotation.y = -0.2;
+        const mon2 = new THREE.Mesh(new THREE.BoxGeometry(0.85, 0.5, 0.04), monMat);
+        mon2.position.set(0.5, 1.45, -0.25);
+        mon2.rotation.y = -0.25;
         podGroup.add(mon2);
-
-        const screen2 = new THREE.Mesh(screenGeo, new THREE.MeshBasicMaterial({ color: 0x0369a1 }));
-        screen2.position.set(0.5, 1.3, -0.17);
-        screen2.rotation.y = -0.2;
-        podGroup.add(screen2);
       } else if (agentId === 'talia') {
-        // Laptop + Coffee Mug + Stack of Reference Books
-        const laptopBaseGeo = new THREE.BoxGeometry(0.45, 0.02, 0.35);
-        const laptopMat = new THREE.MeshStandardMaterial({ color: 0xd1d5db, metalness: 0.8 });
-        const laptop = new THREE.Mesh(laptopBaseGeo, laptopMat);
-        laptop.position.set(0, 0.95, 0.05);
+        // Laptop & Books
+        const laptop = new THREE.Mesh(
+          new THREE.BoxGeometry(0.5, 0.02, 0.35),
+          new THREE.MeshStandardMaterial({ color: 0xe2e8f0, metalness: 0.8 })
+        );
+        laptop.position.set(0, 1.06, 0.05);
         podGroup.add(laptop);
 
-        const laptopScreen = new THREE.Mesh(
-          new THREE.BoxGeometry(0.45, 0.32, 0.02),
+        const screen = new THREE.Mesh(
+          new THREE.BoxGeometry(0.5, 0.35, 0.02),
           new THREE.MeshBasicMaterial({ color: 0xf43f5e })
         );
-        laptopScreen.position.set(0, 1.12, -0.12);
-        laptopScreen.rotation.x = -0.15;
-        podGroup.add(laptopScreen);
+        screen.position.set(0, 1.25, -0.12);
+        screen.rotation.x = -0.15;
+        podGroup.add(screen);
 
-        // Book Stack
+        // Books Stack
         for (let b = 0; b < 3; b++) {
           const book = new THREE.Mesh(
-            new THREE.BoxGeometry(0.35, 0.06, 0.25),
-            new THREE.MeshStandardMaterial({ color: b === 0 ? 0x9f1239 : b === 1 ? 0x1e293b : 0xd97706 })
+            new THREE.BoxGeometry(0.4, 0.07, 0.28),
+            new THREE.MeshStandardMaterial({ color: b === 0 ? 0x881337 : b === 1 ? 0x0284c7 : 0xd97706 })
           );
-          book.position.set(-0.7, 0.95 + b * 0.06, -0.1);
-          book.rotation.y = b * 0.15;
+          book.position.set(-0.75, 1.05 + b * 0.07, -0.1);
+          book.rotation.y = b * 0.2;
           podGroup.add(book);
         }
-
-        // Coffee Mug
-        const mug = new THREE.Mesh(
-          new THREE.CylinderGeometry(0.07, 0.06, 0.12, 12),
-          new THREE.MeshStandardMaterial({ color: 0xffffff })
-        );
-        mug.position.set(0.7, 1.0, 0.1);
-        podGroup.add(mug);
       } else if (agentId === 'putra') {
-        // Multi-device Communication Hub: iPad/Tablet + Phone
+        // Tablet + Pulsing WhatsApp Orb
         const tablet = new THREE.Mesh(
-          new THREE.BoxGeometry(0.55, 0.03, 0.4),
-          new THREE.MeshBasicMaterial({ color: 0x059669 })
+          new THREE.BoxGeometry(0.6, 0.03, 0.45),
+          new THREE.MeshBasicMaterial({ color: 0x065f46 })
         );
-        tablet.position.set(0, 0.94, -0.05);
+        tablet.position.set(0, 1.05, 0.0);
         tablet.rotation.x = 0.2;
         podGroup.add(tablet);
 
-        // Glowing WhatsApp Status Indicator
         const waOrb = new THREE.Mesh(
-          new THREE.SphereGeometry(0.12, 16, 16),
+          new THREE.SphereGeometry(0.18, 16, 16),
           new THREE.MeshBasicMaterial({ color: 0x10b981 })
         );
-        waOrb.position.set(0.65, 1.25, 0.1);
+        waOrb.position.set(0.7, 1.35, 0.1);
         podGroup.add(waOrb);
         pulsingMeshes.push({ mesh: waOrb, baseScale: 1.0 });
       }
 
-      // FLOATING IDENTIFIER BEACON / HOLOGRAM NAME TAG
-      const beaconGeo = new THREE.OctahedronGeometry(0.25, 0);
+      // FLOATING HOLOGRAM OCTAHEDRON BEACON
+      const beaconGeo = new THREE.OctahedronGeometry(0.3, 0);
       const beaconMat = new THREE.MeshBasicMaterial({
         color: data.accentHex,
         wireframe: true,
       });
       const beacon = new THREE.Mesh(beaconGeo, beaconMat);
-      beacon.position.set(0, 2.3, 0);
+      beacon.position.set(0, 2.6, 0);
       podGroup.add(beacon);
       rotatingObjects.push(beacon);
       pulsingMeshes.push({ mesh: beacon, baseScale: 1.0 });
@@ -307,10 +287,10 @@ export default function OfficeCanvas({ selectedAgentId, onSelectAgent }: OfficeC
       scene.add(podGroup);
     };
 
-    // GENERATE ALL 4 AGENT PODS
+    // GENERATE ALL 4 PODS
     Object.keys(AGENTS).forEach(createPod);
 
-    // RAYCASTING (Click & Hover Interaction)
+    // CLICK HANDLER (Raycaster)
     const raycaster = new THREE.Raycaster();
     const mouse = new THREE.Vector2();
 
@@ -335,45 +315,44 @@ export default function OfficeCanvas({ selectedAgentId, onSelectAgent }: OfficeC
 
     renderer.domElement.addEventListener('pointerdown', handlePointerDown);
 
-    // RESIZE LISTENER
+    // RESIZE HANDLER
     const handleResize = () => {
       if (!mountRef.current) return;
-      const w = mountRef.current.clientWidth;
-      const h = mountRef.current.clientHeight;
-      camera.aspect = w / h;
+      width = mountRef.current.clientWidth || window.innerWidth;
+      height = mountRef.current.clientHeight || window.innerHeight;
+      camera.aspect = width / height;
       camera.updateProjectionMatrix();
-      renderer.setSize(w, h);
+      renderer.setSize(width, height);
     };
     window.addEventListener('resize', handleResize);
 
-    // ANIMATION LOOP
-    let animationFrameId: number;
-    let clock = new THREE.Clock();
+    // RENDER LOOP
+    let animId: number;
+    let t = 0;
 
     const animate = () => {
-      animationFrameId = requestAnimationFrame(animate);
-      const elapsedTime = clock.getElapsedTime();
+      animId = requestAnimationFrame(animate);
+      t += 0.02;
 
-      // Smooth Camera Interpolation (Lerp)
-      camera.position.lerp(targetCamPos.current, 0.055);
-      
-      const currentLook = new THREE.Vector3();
-      camera.getWorldDirection(currentLook);
+      // Smooth Camera Lerp
+      camera.position.lerp(targetCamPos.current, 0.05);
+
+      const lookTarget = targetCamLook.current;
       camera.lookAt(
-        camera.position.x + (targetCamLook.current.x - camera.position.x) * 0.055,
-        camera.position.y + (targetCamLook.current.y - camera.position.y) * 0.055,
-        camera.position.z + (targetCamLook.current.z - camera.position.z) * 0.055
+        camera.position.x + (lookTarget.x - camera.position.x) * 0.05,
+        camera.position.y + (lookTarget.y - camera.position.y) * 0.05,
+        camera.position.z + (lookTarget.z - camera.position.z) * 0.05
       );
 
-      // Rotate decorative meshes
+      // Rotate beacons & globes
       rotatingObjects.forEach((obj, idx) => {
-        obj.rotation.y = elapsedTime * (0.8 + idx * 0.2);
-        obj.rotation.x = Math.sin(elapsedTime + idx) * 0.2;
+        obj.rotation.y = t * (0.8 + idx * 0.2);
+        obj.rotation.x = Math.sin(t + idx) * 0.2;
       });
 
-      // Pulse meshes (beacon / signals)
+      // Pulse glows
       pulsingMeshes.forEach(({ mesh, baseScale }) => {
-        const s = baseScale + Math.sin(elapsedTime * 3) * 0.15;
+        const s = baseScale + Math.sin(t * 2.5) * 0.12;
         mesh.scale.set(s, s, s);
       });
 
@@ -382,9 +361,8 @@ export default function OfficeCanvas({ selectedAgentId, onSelectAgent }: OfficeC
 
     animate();
 
-    // CLEANUP
     return () => {
-      cancelAnimationFrame(animationFrameId);
+      cancelAnimationFrame(animId);
       window.removeEventListener('resize', handleResize);
       renderer.domElement.removeEventListener('pointerdown', handlePointerDown);
       renderer.dispose();
@@ -394,15 +372,14 @@ export default function OfficeCanvas({ selectedAgentId, onSelectAgent }: OfficeC
     };
   }, [onSelectAgent]);
 
-  // UPDATE CAMERA TARGET ON AGENT SELECTION
+  // CAMERA TARGET SWITCH ON SELECTION
   useEffect(() => {
     if (selectedAgentId && AGENTS[selectedAgentId]) {
       const [ax, ay, az] = AGENTS[selectedAgentId].podCoordinates;
-      targetCamPos.current.set(ax + 0.5, ay + 3.8, az + 5.5);
-      targetCamLook.current.set(ax, ay + 1.1, az);
+      targetCamPos.current.set(ax + 0.6, ay + 4.2, az + 6.0);
+      targetCamLook.current.set(ax, ay + 1.2, az);
     } else {
-      // DEFAULT OVERVIEW PERSPECTIVE
-      targetCamPos.current.set(0, 14, 18);
+      targetCamPos.current.set(0, 15, 20);
       targetCamLook.current.set(0, 0, 0);
     }
   }, [selectedAgentId]);
