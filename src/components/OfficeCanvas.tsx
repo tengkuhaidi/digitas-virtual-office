@@ -11,7 +11,7 @@ interface OfficeCanvasProps {
 
 export default function OfficeCanvas({ selectedAgentId, onSelectAgent }: OfficeCanvasProps) {
   const mountRef = useRef<HTMLDivElement>(null);
-  const targetCamPos = useRef(new THREE.Vector3(12, 14, 18));
+  const targetCamPos = useRef(new THREE.Vector3(12, 13, 16));
   const targetCamLook = useRef(new THREE.Vector3(0, 1.2, 0));
 
   useEffect(() => {
@@ -23,11 +23,11 @@ export default function OfficeCanvas({ selectedAgentId, onSelectAgent }: OfficeC
     // SCENE
     const scene = new THREE.Scene();
     scene.background = new THREE.Color(0x0a0c16);
-    scene.fog = new THREE.FogExp2(0x0a0c16, 0.022);
+    scene.fog = new THREE.FogExp2(0x0a0c16, 0.024);
 
-    // CAMERA (Smooth isometric 3/4 perspective)
-    const camera = new THREE.PerspectiveCamera(38, width / height, 0.1, 1000);
-    camera.position.set(14, 16, 20);
+    // CAMERA (Smooth isometric 3/4 perspective diorama)
+    const camera = new THREE.PerspectiveCamera(36, width / height, 0.1, 1000);
+    camera.position.set(13, 15, 18);
     camera.lookAt(0, 1.2, 0);
 
     // RENDERER
@@ -40,166 +40,274 @@ export default function OfficeCanvas({ selectedAgentId, onSelectAgent }: OfficeC
     renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, 2));
     mountRef.current.appendChild(renderer.domElement);
 
-    // AMBIENT & LIGHTING
-    const hemiLight = new THREE.HemisphereLight(0xffffff, 0x1e293b, 1.2);
+    // WARM LUXURY ARCHITECTURAL LIGHTING
+    const hemiLight = new THREE.HemisphereLight(0xfff7ed, 0x1e293b, 1.1);
     scene.add(hemiLight);
 
-    const dirLight1 = new THREE.DirectionalLight(0xfff7ed, 1.6);
-    dirLight1.position.set(18, 25, 14);
-    scene.add(dirLight1);
+    const mainKeyLight = new THREE.DirectionalLight(0xffedd5, 1.8);
+    mainKeyLight.position.set(16, 22, 14);
+    scene.add(mainKeyLight);
 
-    const dirLight2 = new THREE.DirectionalLight(0x38bdf8, 0.9);
-    dirLight2.position.set(-16, 18, -12);
-    scene.add(dirLight2);
+    const cyanRimLight = new THREE.DirectionalLight(0x38bdf8, 1.0);
+    cyanRimLight.position.set(-16, 18, -12);
+    scene.add(cyanRimLight);
 
-    // --- PROCEDURAL DYNAMIC CANVAS TEXTURES ---
+    // --- PROCEDURAL DYNAMIC MONITORS CANVAS TEXTURES ---
 
-    // 1. Monitor Code Feed Texture
     const codeCanvas = document.createElement('canvas');
     codeCanvas.width = 512;
     codeCanvas.height = 256;
     const codeCtx = codeCanvas.getContext('2d')!;
     const codeTex = new THREE.CanvasTexture(codeCanvas);
 
-    // 2. SEO Chart / Analytics Texture
     const chartCanvas = document.createElement('canvas');
     chartCanvas.width = 512;
     chartCanvas.height = 256;
     const chartCtx = chartCanvas.getContext('2d')!;
     const chartTex = new THREE.CanvasTexture(chartCanvas);
 
-    // 3. Editorial Text / Blog Draft Texture
     const textCanvas = document.createElement('canvas');
     textCanvas.width = 512;
     textCanvas.height = 256;
     const textCtx = textCanvas.getContext('2d')!;
     const textTex = new THREE.CanvasTexture(textCanvas);
 
-    // 4. WhatsApp Chat Feed Texture
     const waCanvas = document.createElement('canvas');
     waCanvas.width = 512;
     waCanvas.height = 256;
     const waCtx = waCanvas.getContext('2d')!;
     const waTex = new THREE.CanvasTexture(waCanvas);
 
-    // --- ENVIRONMENT ARCHITECTURE ---
+    // --- 3D SPEECH BUBBLE SPRITE TEXTURE GENERATOR ---
+    const createBubbleTexture = (name: string, role: string, text: string, colorHex: string) => {
+      const bCanvas = document.createElement('canvas');
+      bCanvas.width = 512;
+      bCanvas.height = 200;
+      const bCtx = bCanvas.getContext('2d')!;
 
-    // Raised Flooring Stage (Architectural Podium)
-    const floorGeo = new THREE.BoxGeometry(25, 0.6, 25);
-    const floorMat = new THREE.MeshStandardMaterial({
-      color: 0x131826,
-      roughness: 0.5,
-      metalness: 0.2,
+      // Rounded bubble body
+      bCtx.fillStyle = 'rgba(15, 23, 42, 0.92)';
+      bCtx.strokeStyle = colorHex;
+      bCtx.lineWidth = 4;
+      
+      const x = 16, y = 16, w = 480, h = 140, r = 18;
+      bCtx.beginPath();
+      bCtx.moveTo(x + r, y);
+      bCtx.lineTo(x + w - r, y);
+      bCtx.quadraticCurveTo(x + w, y, x + w, y + r);
+      bCtx.lineTo(x + w, y + h - r);
+      bCtx.quadraticCurveTo(x + w, y + h, x + w - r, y + h);
+      // speech tail pointer
+      bCtx.lineTo(x + w / 2 + 15, y + h);
+      bCtx.lineTo(x + w / 2, y + h + 24);
+      bCtx.lineTo(x + w / 2 - 15, y + h);
+      bCtx.lineTo(x + r, y + h);
+      bCtx.quadraticCurveTo(x, y + h, x, y + h - r);
+      bCtx.lineTo(x, y + r);
+      bCtx.quadraticCurveTo(x, y, x + r, y);
+      bCtx.closePath();
+      bCtx.fill();
+      bCtx.stroke();
+
+      // Header Tag
+      bCtx.fillStyle = colorHex;
+      bCtx.font = 'bold 22px system-ui, sans-serif';
+      bCtx.fillText(`● ${name.toUpperCase()} // ${role.toUpperCase()}`, 36, 56);
+
+      // Body speech text
+      bCtx.fillStyle = '#f8fafc';
+      bCtx.font = '20px system-ui, sans-serif';
+      bCtx.fillText(`"${text}"`, 36, 96);
+
+      // Micro status badge
+      bCtx.fillStyle = '#94a3b8';
+      bCtx.font = '14px monospace';
+      bCtx.fillText(`[STATE: ACTIVE TASK]`, 36, 130);
+
+      const tex = new THREE.CanvasTexture(bCanvas);
+      tex.needsUpdate = true;
+      return tex;
+    };
+
+    // --- ENVIRONMENT ARCHITECTURE (Modern Scandinavian Tech Studio) ---
+
+    // Raised Podium Platform with Dual Chamfer
+    const podiumGeo = new THREE.BoxGeometry(24, 0.8, 24);
+    const podiumMat = new THREE.MeshStandardMaterial({
+      color: 0x111625,
+      roughness: 0.6,
+      metalness: 0.3,
     });
-    const floor = new THREE.Mesh(floorGeo, floorMat);
-    floor.position.y = -0.3;
-    scene.add(floor);
+    const podium = new THREE.Mesh(podiumGeo, podiumMat);
+    podium.position.y = -0.4;
+    scene.add(podium);
 
-    // Subtle Wood Flooring Inset in Central Area
-    const woodCenterGeo = new THREE.BoxGeometry(15, 0.02, 15);
-    const woodMat = new THREE.MeshStandardMaterial({
-      color: 0x1e2433,
+    // Warm Engineered Oak Hardwood Inlay Floor
+    const oakFloorGeo = new THREE.BoxGeometry(22, 0.02, 22);
+    const oakFloorMat = new THREE.MeshStandardMaterial({
+      color: 0x1a2133,
       roughness: 0.4,
     });
-    const woodCenter = new THREE.Mesh(woodCenterGeo, woodMat);
-    woodCenter.position.y = 0.01;
-    scene.add(woodCenter);
+    const oakFloor = new THREE.Mesh(oakFloorGeo, oakFloorMat);
+    oakFloor.position.y = 0.01;
+    scene.add(oakFloor);
 
-    // Technical Blueprint Grid
-    const grid = new THREE.GridHelper(25, 25, 0x38bdf8, 0x1e293b);
+    // Subtle Architectural Grid Overlay
+    const grid = new THREE.GridHelper(22, 22, 0x38bdf8, 0x1e293b);
     grid.position.y = 0.02;
     scene.add(grid);
 
-    // Architectural Perimeter Neon Trims
+    // Perimeter Brushed Metallic Edge Trim
     const trimMat = new THREE.MeshBasicMaterial({ color: 0x38bdf8 });
     const createTrim = (w: number, d: number, x: number, z: number) => {
       const mesh = new THREE.Mesh(new THREE.BoxGeometry(w, 0.08, d), trimMat);
       mesh.position.set(x, 0.04, z);
       scene.add(mesh);
     };
-    createTrim(25.2, 0.15, 0, 12.5);
-    createTrim(25.2, 0.15, 0, -12.5);
-    createTrim(0.15, 25.2, 12.5, 0);
-    createTrim(0.15, 25.2, -12.5, 0);
+    createTrim(22.2, 0.12, 0, 11);
+    createTrim(22.2, 0.12, 0, -11);
+    createTrim(0.12, 22.2, 11, 0);
+    createTrim(0.12, 22.2, -11, 0);
 
-    // Glass Partition / Background Office Walls (L-shape rear)
-    const wallMat = new THREE.MeshPhysicalMaterial({
+    // Translucent Frosted Glass Architecture Walls (Rear corner)
+    const glassMat = new THREE.MeshPhysicalMaterial({
       color: 0x1e293b,
       transparent: true,
-      opacity: 0.25,
-      roughness: 0.1,
-      transmission: 0.6,
-      thickness: 0.5,
+      opacity: 0.35,
+      roughness: 0.15,
+      transmission: 0.7,
+      thickness: 0.8,
     });
-    const backWall = new THREE.Mesh(new THREE.BoxGeometry(25, 4.5, 0.2), wallMat);
-    backWall.position.set(0, 2.25, -12.4);
+    const backWall = new THREE.Mesh(new THREE.BoxGeometry(22, 5.0, 0.25), glassMat);
+    backWall.position.set(0, 2.5, -10.9);
     scene.add(backWall);
 
-    const leftWall = new THREE.Mesh(new THREE.BoxGeometry(0.2, 4.5, 25), wallMat);
-    leftWall.position.set(-12.4, 2.25, 0);
+    const leftWall = new THREE.Mesh(new THREE.BoxGeometry(0.25, 5.0, 22), glassMat);
+    leftWall.position.set(-10.9, 2.5, 0);
     scene.add(leftWall);
 
-    // Architectural Wall Mullions
-    const mullionMat = new THREE.MeshStandardMaterial({ color: 0x0f172a, metalness: 0.8 });
-    for (let x = -10; x <= 10; x += 5) {
-      const m = new THREE.Mesh(new THREE.BoxGeometry(0.15, 4.5, 0.3), mullionMat);
-      m.position.set(x, 2.25, -12.35);
+    // Frosted Wall Mullions (Dark Anodized Aluminum)
+    const mullionMat = new THREE.MeshStandardMaterial({ color: 0x090d16, metalness: 0.85, roughness: 0.2 });
+    for (let x = -9; x <= 9; x += 4.5) {
+      const m = new THREE.Mesh(new THREE.BoxGeometry(0.15, 5.0, 0.35), mullionMat);
+      m.position.set(x, 2.5, -10.85);
+      scene.add(m);
+    }
+    for (let z = -9; z <= 9; z += 4.5) {
+      const m = new THREE.Mesh(new THREE.BoxGeometry(0.35, 5.0, 0.15), mullionMat);
+      m.position.set(-10.85, 2.5, z);
       scene.add(m);
     }
 
-    // Modern Office Plants (Biophilic decor in corners)
-    const createOfficePlant = (px: number, pz: number) => {
-      const plantGroup = new THREE.Group();
-      plantGroup.position.set(px, 0, pz);
+    // Modern Indoor Biophilic Ficus / Monstera Plant Planters
+    const createLuxuryPlant = (px: number, pz: number) => {
+      const group = new THREE.Group();
+      group.position.set(px, 0, pz);
 
-      // Ceramic Planter Pot
-      const potMat = new THREE.MeshStandardMaterial({ color: 0x334155, roughness: 0.3 });
-      const pot = new THREE.Mesh(new THREE.CylinderGeometry(0.5, 0.35, 1.1, 16), potMat);
-      pot.position.y = 0.55;
-      plantGroup.add(pot);
+      // Matte Ceramic Pot
+      const potMat = new THREE.MeshStandardMaterial({ color: 0x27272a, roughness: 0.2 });
+      const pot = new THREE.Mesh(new THREE.CylinderGeometry(0.65, 0.45, 1.4, 20), potMat);
+      pot.position.y = 0.7;
+      group.add(pot);
 
       // Soil
       const soil = new THREE.Mesh(
-        new THREE.CylinderGeometry(0.48, 0.48, 0.1, 16),
-        new THREE.MeshStandardMaterial({ color: 0x27272a })
+        new THREE.CylinderGeometry(0.62, 0.62, 0.1, 16),
+        new THREE.MeshStandardMaterial({ color: 0x18181b })
       );
-      soil.position.y = 1.05;
-      plantGroup.add(soil);
+      soil.position.y = 1.35;
+      group.add(soil);
 
-      // Lush Leaves
-      const leafMat = new THREE.MeshStandardMaterial({ color: 0x10b981, roughness: 0.6 });
-      for (let i = 0; i < 7; i++) {
-        const leaf = new THREE.Mesh(new THREE.ConeGeometry(0.22, 1.1, 5), leafMat);
-        const angle = (i / 7) * Math.PI * 2;
-        leaf.position.set(Math.cos(angle) * 0.25, 1.4, Math.sin(angle) * 0.25);
-        leaf.rotation.x = Math.sin(angle) * 0.45;
-        leaf.rotation.z = -Math.cos(angle) * 0.45;
-        plantGroup.add(leaf);
+      // Foliage Cluster
+      const leafMat = new THREE.MeshStandardMaterial({ color: 0x059669, roughness: 0.5 });
+      for (let i = 0; i < 9; i++) {
+        const leaf = new THREE.Mesh(new THREE.ConeGeometry(0.28, 1.3, 6), leafMat);
+        const ang = (i / 9) * Math.PI * 2;
+        leaf.position.set(Math.cos(ang) * 0.35, 1.8, Math.sin(ang) * 0.35);
+        leaf.rotation.x = Math.sin(ang) * 0.5;
+        leaf.rotation.z = -Math.cos(ang) * 0.5;
+        group.add(leaf);
       }
-      scene.add(plantGroup);
+      scene.add(group);
     };
 
-    createOfficePlant(-10.5, -10.5);
-    createOfficePlant(10.5, -10.5);
-    createOfficePlant(-10.5, 10.5);
+    createLuxuryPlant(-9.5, -9.5);
+    createLuxuryPlant(9.5, -9.5);
+    createLuxuryPlant(-9.5, 9.5);
 
-    // Water Cooler & Refreshment Station (Corner lounge feel)
-    const coolerGroup = new THREE.Group();
-    coolerGroup.position.set(10.5, 0, 8.5);
-    const coolerBase = new THREE.Mesh(
-      new THREE.BoxGeometry(0.8, 1.4, 0.8),
-      new THREE.MeshStandardMaterial({ color: 0xe2e8f0, roughness: 0.2 })
-    );
-    coolerBase.position.y = 0.7;
-    coolerGroup.add(coolerBase);
+    // --- REFINED ERGONOMIC TASK CHAIR COMPONENT ---
+    const createErgonomicChair = (metalMat: THREE.Material, accentColor: number) => {
+      const chair = new THREE.Group();
+      chair.position.set(0, 0, 0.95);
 
-    const waterBottle = new THREE.Mesh(
-      new THREE.CylinderGeometry(0.3, 0.3, 0.7, 16),
-      new THREE.MeshPhysicalMaterial({ color: 0x38bdf8, transparent: true, opacity: 0.6, roughness: 0.1 })
-    );
-    waterBottle.position.y = 1.75;
-    coolerGroup.add(waterBottle);
-    scene.add(coolerGroup);
+      // 5-Star Caster Spider Base
+      const baseGroup = new THREE.Group();
+      baseGroup.position.y = 0.1;
+      for (let i = 0; i < 5; i++) {
+        const ang = (i / 5) * Math.PI * 2;
+        const arm = new THREE.Mesh(new THREE.BoxGeometry(0.1, 0.05, 0.45), metalMat);
+        arm.position.set(Math.sin(ang) * 0.22, 0, Math.cos(ang) * 0.22);
+        arm.rotation.y = -ang;
+        baseGroup.add(arm);
+
+        // Caster wheel
+        const wheel = new THREE.Mesh(
+          new THREE.CylinderGeometry(0.04, 0.04, 0.05, 8),
+          new THREE.MeshStandardMaterial({ color: 0x020617 })
+        );
+        wheel.rotation.z = Math.PI / 2;
+        wheel.position.set(Math.sin(ang) * 0.42, -0.05, Math.cos(ang) * 0.42);
+        baseGroup.add(wheel);
+      }
+      chair.add(baseGroup);
+
+      // Gas-lift Piston
+      const piston = new THREE.Mesh(new THREE.CylinderGeometry(0.04, 0.04, 0.45, 12), metalMat);
+      piston.position.y = 0.32;
+      chair.add(piston);
+
+      // Contoured Foam Seat Cushion
+      const seatMat = new THREE.MeshStandardMaterial({ color: 0x0f172a, roughness: 0.6 });
+      const seat = new THREE.Mesh(new THREE.BoxGeometry(0.82, 0.12, 0.78), seatMat);
+      seat.position.y = 0.62;
+      chair.add(seat);
+
+      // Curved Lumbar Spine Frame
+      const spine = new THREE.Mesh(new THREE.BoxGeometry(0.1, 0.85, 0.06), metalMat);
+      spine.position.set(0, 1.05, 0.38);
+      spine.rotation.x = 0.12;
+      chair.add(spine);
+
+      // Breathable Mesh High-Backrest with Lateral Support
+      const backMat = new THREE.MeshStandardMaterial({
+        color: 0x1e293b,
+        roughness: 0.7,
+      });
+      const backrest = new THREE.Mesh(new THREE.BoxGeometry(0.72, 0.85, 0.08), backMat);
+      backrest.position.set(0, 1.15, 0.34);
+      backrest.rotation.x = 0.12;
+      chair.add(backrest);
+
+      // Ergonomic 3D Adjustable Armrests
+      const armMat = new THREE.MeshStandardMaterial({ color: 0x334155, roughness: 0.3 });
+      const armL = new THREE.Mesh(new THREE.BoxGeometry(0.12, 0.04, 0.35), armMat);
+      armL.position.set(-0.44, 0.94, 0.08);
+      chair.add(armL);
+
+      const armSupportL = new THREE.Mesh(new THREE.CylinderGeometry(0.025, 0.025, 0.35, 8), metalMat);
+      armSupportL.position.set(-0.44, 0.76, 0.08);
+      chair.add(armSupportL);
+
+      const armR = new THREE.Mesh(new THREE.BoxGeometry(0.12, 0.04, 0.35), armMat);
+      armR.position.set(0.44, 0.94, 0.08);
+      chair.add(armR);
+
+      const armSupportR = new THREE.Mesh(new THREE.CylinderGeometry(0.025, 0.025, 0.35, 8), metalMat);
+      armSupportR.position.set(0.44, 0.76, 0.08);
+      chair.add(armSupportR);
+
+      return chair;
+    };
 
     // --- REFINED CHARACTER VOXEL GENERATOR ---
 
@@ -215,7 +323,15 @@ export default function OfficeCanvas({ selectedAgentId, onSelectAgent }: OfficeC
     const characters: CharacterJoints[] = [];
     const clickableObjects: THREE.Object3D[] = [];
     const rotatingObjects: THREE.Object3D[] = [];
-    const floatingBadges: { badge: THREE.Group; initialY: number; freq: number }[] = [];
+    const speechSprites: { sprite: THREE.Sprite; initialY: number; freq: number }[] = [];
+
+    // Speech data for each agent
+    const SPEECHES: Record<string, string> = {
+      gajahmada: 'Cluster nominal. 4 agent pods online & orchestrating.',
+      robert: 'SERP audit complete: 5 UK & ID competitor gaps identified.',
+      talia: 'Slot 8/8 finished. Pushing instant indexing to Google API.',
+      putra: 'Active chat on WhatsApp gateway. 5 inbound leads triaged.',
+    };
 
     const buildDetailedAgent = (agentId: string) => {
       const data = AGENTS[agentId];
@@ -226,10 +342,10 @@ export default function OfficeCanvas({ selectedAgentId, onSelectAgent }: OfficeC
 
       // 1. Pod Circle Platform with Edge Bevel & Glowing Trim
       const podBase = new THREE.Mesh(
-        new THREE.CylinderGeometry(2.6, 2.7, 0.2, 32),
-        new THREE.MeshStandardMaterial({ color: 0x182032, roughness: 0.3, metalness: 0.4 })
+        new THREE.CylinderGeometry(2.6, 2.7, 0.22, 32),
+        new THREE.MeshStandardMaterial({ color: 0x151c2e, roughness: 0.3, metalness: 0.5 })
       );
-      podBase.position.y = 0.1;
+      podBase.position.y = 0.11;
       podBase.userData = { agentId };
       podGroup.add(podBase);
       clickableObjects.push(podBase);
@@ -239,8 +355,14 @@ export default function OfficeCanvas({ selectedAgentId, onSelectAgent }: OfficeC
         new THREE.MeshBasicMaterial({ color: data.accentHex, side: THREE.DoubleSide })
       );
       podRing.rotation.x = -Math.PI / 2;
-      podRing.position.y = 0.21;
+      podRing.position.y = 0.23;
       podGroup.add(podRing);
+
+      // Warm Overhead Spotlight dedicated to this Pod
+      const podSpot = new THREE.SpotLight(data.accentHex, 1.4, 8, Math.PI / 4, 0.4);
+      podSpot.position.set(0, 5.0, 0);
+      podSpot.target = podBase;
+      podGroup.add(podSpot);
 
       // 2. High-End Executive Work Desk
       const deskGroup = new THREE.Group();
@@ -253,15 +375,15 @@ export default function OfficeCanvas({ selectedAgentId, onSelectAgent }: OfficeC
       deskGroup.add(deskTop);
       clickableObjects.push(deskTop);
 
-      // Desk Mat / Pad
+      // Vegan Leather Desk Pad
       const deskPad = new THREE.Mesh(
-        new THREE.BoxGeometry(1.6, 0.015, 0.7),
-        new THREE.MeshStandardMaterial({ color: 0x0f172a, roughness: 0.7 })
+        new THREE.BoxGeometry(1.6, 0.015, 0.75),
+        new THREE.MeshStandardMaterial({ color: 0x090d16, roughness: 0.8 })
       );
       deskPad.position.set(0, 1.11, 0.15);
       deskGroup.add(deskPad);
 
-      // Sleek Steel Desk Legs
+      // Sleek Steel Desk Legs with Levelers
       const metalLegMat = new THREE.MeshStandardMaterial({ color: 0x94a3b8, metalness: 0.85, roughness: 0.2 });
       [[-1.1, -0.5], [1.1, -0.5], [-1.1, 0.5], [1.1, 0.5]].forEach(([lx, lz]) => {
         const leg = new THREE.Mesh(new THREE.CylinderGeometry(0.04, 0.04, 1.0, 12), metalLegMat);
@@ -269,7 +391,7 @@ export default function OfficeCanvas({ selectedAgentId, onSelectAgent }: OfficeC
         deskGroup.add(leg);
       });
 
-      // Desk Privacy Acoustic Baffle Panel (Front baffle)
+      // Acoustic Fabric Modesty Panel / Baffle
       const baffle = new THREE.Mesh(
         new THREE.BoxGeometry(2.3, 0.6, 0.04),
         new THREE.MeshStandardMaterial({ color: data.accentHex, roughness: 0.8 })
@@ -277,7 +399,7 @@ export default function OfficeCanvas({ selectedAgentId, onSelectAgent }: OfficeC
       baffle.position.set(0, 0.9, -0.6);
       deskGroup.add(baffle);
 
-      // Keyboard & Mouse
+      // Mechanical Keyboard with RGB Underglow Bar
       const kb = new THREE.Mesh(
         new THREE.BoxGeometry(0.65, 0.02, 0.25),
         new THREE.MeshStandardMaterial({ color: 0x334155 })
@@ -285,14 +407,22 @@ export default function OfficeCanvas({ selectedAgentId, onSelectAgent }: OfficeC
       kb.position.set(-0.1, 1.12, 0.28);
       deskGroup.add(kb);
 
-      const mouse = new THREE.Mesh(
-        new THREE.BoxGeometry(0.1, 0.025, 0.16),
-        new THREE.MeshStandardMaterial({ color: 0x64748b })
+      const kbRgb = new THREE.Mesh(
+        new THREE.BoxGeometry(0.66, 0.01, 0.02),
+        new THREE.MeshBasicMaterial({ color: data.accentHex })
       );
-      mouse.position.set(0.42, 1.12, 0.28);
+      kbRgb.position.set(-0.1, 1.12, 0.41);
+      deskGroup.add(kbRgb);
+
+      // Ergonomic Vertical Mouse
+      const mouse = new THREE.Mesh(
+        new THREE.BoxGeometry(0.1, 0.035, 0.16),
+        new THREE.MeshStandardMaterial({ color: 0x64748b, roughness: 0.3 })
+      );
+      mouse.position.set(0.42, 1.13, 0.28);
       deskGroup.add(mouse);
 
-      // Modern Ceramic Coffee Mug
+      // Ceramic Matte Coffee Mug
       const mugMat = new THREE.MeshStandardMaterial({ color: 0xf8fafc, roughness: 0.2 });
       const mug = new THREE.Mesh(new THREE.CylinderGeometry(0.08, 0.07, 0.16, 12), mugMat);
       mug.position.set(-0.95, 1.18, 0.35);
@@ -300,65 +430,43 @@ export default function OfficeCanvas({ selectedAgentId, onSelectAgent }: OfficeC
 
       podGroup.add(deskGroup);
 
-      // 3. Ergonomic Mesh Task Chair
-      const chairGroup = new THREE.Group();
-      chairGroup.position.set(0, 0, 1.0);
-      const chairMat = new THREE.MeshStandardMaterial({ color: 0x0f172a, roughness: 0.4 });
+      // 3. Ergonomic Chair
+      const chair = createErgonomicChair(metalLegMat, data.accentHex);
+      podGroup.add(chair);
 
-      // Star Base with Casters
-      const starBase = new THREE.Mesh(new THREE.CylinderGeometry(0.4, 0.4, 0.05, 5), metalLegMat);
-      starBase.position.y = 0.12;
-      chairGroup.add(starBase);
-
-      const gasLift = new THREE.Mesh(new THREE.CylinderGeometry(0.05, 0.05, 0.45, 12), metalLegMat);
-      gasLift.position.y = 0.35;
-      chairGroup.add(gasLift);
-
-      // Cushioned Seat & Mesh Back
-      const seat = new THREE.Mesh(new THREE.BoxGeometry(0.8, 0.12, 0.75), chairMat);
-      seat.position.y = 0.65;
-      chairGroup.add(seat);
-
-      const backrest = new THREE.Mesh(new THREE.BoxGeometry(0.72, 0.85, 0.08), chairMat);
-      backrest.position.set(0, 1.15, 0.32);
-      backrest.rotation.x = 0.08;
-      chairGroup.add(backrest);
-
-      // Armrests
-      const arm1 = new THREE.Mesh(new THREE.BoxGeometry(0.1, 0.04, 0.4), metalLegMat);
-      arm1.position.set(-0.42, 0.92, 0.1);
-      chairGroup.add(arm1);
-      const arm2 = new THREE.Mesh(new THREE.BoxGeometry(0.1, 0.04, 0.4), metalLegMat);
-      arm2.position.set(0.42, 0.92, 0.1);
-      chairGroup.add(arm2);
-
-      podGroup.add(chairGroup);
-
-      // 4. Stylized Voxel Character (Sitting, typing, looking at screens)
+      // 4. Stylized Voxel Character
       const charGroup = new THREE.Group();
-      charGroup.position.set(0, 0.72, 0.85);
+      charGroup.position.set(0, 0.72, 0.82);
 
       // Pants / Lower Body
-      const pantsMat = new THREE.MeshStandardMaterial({ color: 0x1e293b });
-      const hips = new THREE.Mesh(new THREE.BoxGeometry(0.5, 0.25, 0.45), pantsMat);
+      const pantsMat = new THREE.MeshStandardMaterial({ color: 0x1e293b, roughness: 0.7 });
+      const hips = new THREE.Mesh(new THREE.BoxGeometry(0.52, 0.25, 0.46), pantsMat);
       hips.position.y = 0.12;
       charGroup.add(hips);
 
-      // Thighs reaching forward to desk
-      const thighs = new THREE.Mesh(new THREE.BoxGeometry(0.48, 0.2, 0.5), pantsMat);
+      // Thighs reaching to desk
+      const thighs = new THREE.Mesh(new THREE.BoxGeometry(0.5, 0.22, 0.52), pantsMat);
       thighs.position.set(0, 0.22, -0.32);
       charGroup.add(thighs);
 
-      // Torso / Shirt with Agent Accent Color
+      // Torso / Shirt with Agent Signature Color
       const shirtMat = new THREE.MeshStandardMaterial({
         color: data.accentHex,
-        roughness: 0.6,
+        roughness: 0.5,
       });
-      const torso = new THREE.Mesh(new THREE.BoxGeometry(0.55, 0.68, 0.36), shirtMat);
+      const torso = new THREE.Mesh(new THREE.BoxGeometry(0.56, 0.68, 0.38), shirtMat);
       torso.position.y = 0.58;
       charGroup.add(torso);
 
-      // Head & Hair
+      // White Formal Collar Accent
+      const collar = new THREE.Mesh(
+        new THREE.BoxGeometry(0.24, 0.1, 0.04),
+        new THREE.MeshStandardMaterial({ color: 0xffffff })
+      );
+      collar.position.set(0, 0.92, -0.19);
+      charGroup.add(collar);
+
+      // Head Group
       const headGroup = new THREE.Group();
       headGroup.position.set(0, 1.15, 0);
 
@@ -366,47 +474,53 @@ export default function OfficeCanvas({ selectedAgentId, onSelectAgent }: OfficeC
       const head = new THREE.Mesh(new THREE.BoxGeometry(0.38, 0.38, 0.38), skinMat);
       headGroup.add(head);
 
-      // Eyes (Stylized glasses / friendly eyes)
-      const eyeMat = new THREE.MeshBasicMaterial({ color: 0x0f172a });
-      const eyeL = new THREE.Mesh(new THREE.BoxGeometry(0.08, 0.06, 0.02), eyeMat);
-      eyeL.position.set(-0.1, 0.02, -0.195);
-      headGroup.add(eyeL);
-      const eyeR = new THREE.Mesh(new THREE.BoxGeometry(0.08, 0.06, 0.02), eyeMat);
-      eyeR.position.set(0.1, 0.02, -0.195);
-      headGroup.add(eyeR);
+      // Stylized Eyes with Pupils
+      const eyeWhiteMat = new THREE.MeshBasicMaterial({ color: 0xffffff });
+      const pupilMat = new THREE.MeshBasicMaterial({ color: 0x090d16 });
 
-      // Character-Specific Hair & Headpieces
+      const createEye = (x: number) => {
+        const eyeW = new THREE.Mesh(new THREE.BoxGeometry(0.08, 0.06, 0.02), eyeWhiteMat);
+        eyeW.position.set(x, 0.03, -0.192);
+        const pupil = new THREE.Mesh(new THREE.BoxGeometry(0.04, 0.04, 0.02), pupilMat);
+        pupil.position.set(x > 0 ? 0.015 : -0.015, 0, -0.005);
+        eyeW.add(pupil);
+        return eyeW;
+      };
+      headGroup.add(createEye(-0.1));
+      headGroup.add(createEye(0.1));
+
+      // Character-Specific Hair, Headpieces & Accessories
       if (agentId === 'gajahmada') {
-        // Blangkon / Traditional Crown Topknot (Deep Bronze & Gold)
-        const crownMat = new THREE.MeshStandardMaterial({ color: 0xb45309, metalness: 0.5 });
+        // Blangkon Crown / Traditional Headpiece (Bronze & Gold)
+        const crownMat = new THREE.MeshStandardMaterial({ color: 0x92400e, metalness: 0.4 });
         const crown = new THREE.Mesh(new THREE.CylinderGeometry(0.24, 0.24, 0.18, 16), crownMat);
         crown.position.y = 0.26;
         headGroup.add(crown);
 
         const goldBand = new THREE.Mesh(
           new THREE.TorusGeometry(0.24, 0.04, 8, 24),
-          new THREE.MeshStandardMaterial({ color: 0xf59e0b, metalness: 0.9 })
+          new THREE.MeshStandardMaterial({ color: 0xf59e0b, metalness: 0.9, roughness: 0.2 })
         );
         goldBand.rotation.x = Math.PI / 2;
         goldBand.position.y = 0.18;
         headGroup.add(goldBand);
       } else if (agentId === 'robert') {
         // British Classic Slick Brown Hair & Glasses
-        const hairMat = new THREE.MeshStandardMaterial({ color: 0x451a03 });
+        const hairMat = new THREE.MeshStandardMaterial({ color: 0x451a03, roughness: 0.6 });
         const hair = new THREE.Mesh(new THREE.BoxGeometry(0.42, 0.14, 0.42), hairMat);
         hair.position.y = 0.22;
         headGroup.add(hair);
 
-        // Spectacles Bridge
+        // Spectacles Wireframe Frame
         const glassesFrame = new THREE.Mesh(
           new THREE.BoxGeometry(0.32, 0.08, 0.04),
-          new THREE.MeshStandardMaterial({ color: 0x1e3a8a, metalness: 0.8 })
+          new THREE.MeshStandardMaterial({ color: 0x1e3a8a, metalness: 0.85 })
         );
-        glassesFrame.position.set(0, 0.02, -0.2);
+        glassesFrame.position.set(0, 0.03, -0.2);
         headGroup.add(glassesFrame);
       } else if (agentId === 'talia') {
-        // Long Brunette Ponytail / Academic Style
-        const hairMat = new THREE.MeshStandardMaterial({ color: 0x292524 });
+        // Academic Ponytail / Editorial Brunette Style
+        const hairMat = new THREE.MeshStandardMaterial({ color: 0x292524, roughness: 0.5 });
         const hairTop = new THREE.Mesh(new THREE.BoxGeometry(0.42, 0.16, 0.42), hairMat);
         hairTop.position.y = 0.22;
         headGroup.add(hairTop);
@@ -416,25 +530,22 @@ export default function OfficeCanvas({ selectedAgentId, onSelectAgent }: OfficeC
         ponytail.rotation.x = -0.2;
         headGroup.add(ponytail);
       } else if (agentId === 'putra') {
-        // Modern Crop Fade & Headset with Mic
-        const hairMat = new THREE.MeshStandardMaterial({ color: 0x171717 });
+        // Modern Crop & Communication Headset with Boom Mic
+        const hairMat = new THREE.MeshStandardMaterial({ color: 0x171717, roughness: 0.6 });
         const hair = new THREE.Mesh(new THREE.BoxGeometry(0.4, 0.12, 0.4), hairMat);
         hair.position.y = 0.22;
         headGroup.add(hair);
 
-        // Headset Band
-        const headsetMat = new THREE.MeshStandardMaterial({ color: 0x10b981, metalness: 0.7 });
+        const headsetMat = new THREE.MeshStandardMaterial({ color: 0x10b981, metalness: 0.8 });
         const band = new THREE.Mesh(new THREE.TorusGeometry(0.24, 0.035, 8, 24, Math.PI), headsetMat);
         band.position.set(0, 0.16, 0);
         headGroup.add(band);
 
-        // Ear cups
         const earL = new THREE.Mesh(new THREE.CylinderGeometry(0.08, 0.08, 0.06, 12), headsetMat);
         earL.rotation.z = Math.PI / 2;
         earL.position.set(-0.21, 0.05, 0);
         headGroup.add(earL);
 
-        // Boom mic
         const mic = new THREE.Mesh(new THREE.CylinderGeometry(0.015, 0.015, 0.25, 8), headsetMat);
         mic.rotation.x = Math.PI / 3;
         mic.position.set(-0.2, -0.05, -0.15);
@@ -480,7 +591,7 @@ export default function OfficeCanvas({ selectedAgentId, onSelectAgent }: OfficeC
 
       // 5. Work Equipment & Animated Displays per Agent
       if (agentId === 'gajahmada') {
-        // Holographic Rotating Wireframe Orchestration Globe
+        // Holographic Rotating Wireframe Globe
         const globeGroup = new THREE.Group();
         globeGroup.position.set(0, 1.8, -0.1);
 
@@ -499,7 +610,7 @@ export default function OfficeCanvas({ selectedAgentId, onSelectAgent }: OfficeC
         podGroup.add(globeGroup);
         rotatingObjects.push(globeGroup);
 
-        // Master Terminal Monitor with Live Code Feed
+        // Master Terminal Monitor
         const monFrame = new THREE.Mesh(
           new THREE.BoxGeometry(1.2, 0.75, 0.05),
           new THREE.MeshStandardMaterial({ color: 0x0f172a, metalness: 0.9 })
@@ -514,7 +625,7 @@ export default function OfficeCanvas({ selectedAgentId, onSelectAgent }: OfficeC
         monScreen.position.set(0, 1.5, -0.42);
         podGroup.add(monScreen);
 
-        // Rack Server with Flashing Node LEDs
+        // Server Rack with Blinking LEDs
         const serverRack = new THREE.Mesh(
           new THREE.BoxGeometry(1.0, 2.4, 0.7),
           new THREE.MeshStandardMaterial({ color: 0x090d16, roughness: 0.6, metalness: 0.8 })
@@ -576,7 +687,7 @@ export default function OfficeCanvas({ selectedAgentId, onSelectAgent }: OfficeC
         screen2.rotation.y = -0.25;
         podGroup.add(screen2);
       } else if (agentId === 'talia') {
-        // Modern Laptop + Second Portrait Screen for Longform Writing
+        // Laptop + Portrait Screen for Editorial Writing
         const laptopBase = new THREE.Mesh(
           new THREE.BoxGeometry(0.6, 0.03, 0.42),
           new THREE.MeshStandardMaterial({ color: 0xe2e8f0, metalness: 0.9 })
@@ -592,7 +703,7 @@ export default function OfficeCanvas({ selectedAgentId, onSelectAgent }: OfficeC
         laptopScreen.rotation.x = -0.18;
         podGroup.add(laptopScreen);
 
-        // Portrait 4K Monitor for Proofreading
+        // Portrait 4K Monitor
         const portraitFrame = new THREE.Mesh(
           new THREE.BoxGeometry(0.55, 0.95, 0.04),
           new THREE.MeshStandardMaterial({ color: 0x0f172a })
@@ -654,27 +765,23 @@ export default function OfficeCanvas({ selectedAgentId, onSelectAgent }: OfficeC
         podGroup.add(waSphere);
       }
 
-      // 6. Overhead Glowing Nameplate / Badge
-      const badgeGroup = new THREE.Group();
-      badgeGroup.position.set(0, 3.1, 0);
-
-      const beaconMesh = new THREE.Mesh(
-        new THREE.OctahedronGeometry(0.28, 0),
-        new THREE.MeshBasicMaterial({ color: data.accentHex, wireframe: true })
+      // 6. 3D Overhead Floating Speech / Status Bubble Billboard
+      const bubbleTex = createBubbleTexture(
+        data.name,
+        data.role,
+        SPEECHES[agentId] || 'Processing task...',
+        data.color
       );
-      badgeGroup.add(beaconMesh);
-      rotatingObjects.push(beaconMesh);
+      const spriteMat = new THREE.SpriteMaterial({
+        map: bubbleTex,
+        transparent: true,
+      });
+      const bubbleSprite = new THREE.Sprite(spriteMat);
+      bubbleSprite.scale.set(3.2, 1.25, 1.0);
+      bubbleSprite.position.set(0, 3.4, 0);
+      podGroup.add(bubbleSprite);
 
-      // Halo ring around beacon
-      const halo = new THREE.Mesh(
-        new THREE.TorusGeometry(0.45, 0.02, 8, 32),
-        new THREE.MeshBasicMaterial({ color: data.accentHex })
-      );
-      halo.rotation.x = Math.PI / 2;
-      badgeGroup.add(halo);
-
-      podGroup.add(badgeGroup);
-      floatingBadges.push({ badge: badgeGroup, initialY: 3.1, freq: 1.5 + Math.random() });
+      speechSprites.push({ sprite: bubbleSprite, initialY: 3.4, freq: 1.8 + Math.random() });
 
       scene.add(podGroup);
     };
@@ -755,7 +862,6 @@ export default function OfficeCanvas({ selectedAgentId, onSelectAgent }: OfficeC
         chartCtx.font = 'bold 22px sans-serif';
         chartCtx.fillText('ROBERT // SERP COMPETITOR INTELLIGENCE', 20, 36);
 
-        // Draw animated bar graph
         const bars = [45, 68, 88, 55, 92, 78, 98, 84];
         bars.forEach((val, idx) => {
           const h = (val * (0.8 + Math.sin(now + idx) * 0.2)) * 1.3;
@@ -819,7 +925,6 @@ export default function OfficeCanvas({ selectedAgentId, onSelectAgent }: OfficeC
       animId = requestAnimationFrame(animate);
       t += 0.02;
 
-      // Update Screen Textures
       updateScreens();
 
       // Camera Lerp
@@ -831,7 +936,7 @@ export default function OfficeCanvas({ selectedAgentId, onSelectAgent }: OfficeC
         camera.position.z + (lookTarget.z - camera.position.z) * 0.04
       );
 
-      // Animate Characters (Typing hands & subtle breathing)
+      // Animate Characters Typing & Breathing
       characters.forEach((char, idx) => {
         const speed = char.typeSpeed;
         char.leftArm.rotation.x = Math.sin(t * speed + idx) * 0.12;
@@ -840,14 +945,14 @@ export default function OfficeCanvas({ selectedAgentId, onSelectAgent }: OfficeC
         char.torso.position.y = 0.58 + Math.sin(t * 1.5 + idx) * 0.015;
       });
 
-      // Rotate Globes & Holographic Beacons
+      // Rotate Globes
       rotatingObjects.forEach((obj, idx) => {
         obj.rotation.y = t * (0.6 + idx * 0.15);
       });
 
-      // Float Overhead Badges
-      floatingBadges.forEach(({ badge, initialY, freq }) => {
-        badge.position.y = initialY + Math.sin(t * freq) * 0.12;
+      // Float Overhead Speech Bubbles
+      speechSprites.forEach(({ sprite, initialY, freq }) => {
+        sprite.position.y = initialY + Math.sin(t * freq) * 0.1;
       });
 
       renderer.render(scene, camera);
@@ -874,7 +979,7 @@ export default function OfficeCanvas({ selectedAgentId, onSelectAgent }: OfficeC
       targetCamLook.current.set(ax, ay + 1.2, az);
     } else {
       // Isometric High Overview
-      targetCamPos.current.set(13, 16, 19);
+      targetCamPos.current.set(12, 14, 17);
       targetCamLook.current.set(0, 1.2, 0);
     }
   }, [selectedAgentId]);
