@@ -39,7 +39,7 @@ interface AgentSim {
 export default function OfficeCanvas({ selectedAgentId, onSelectAgent }: OfficeCanvasProps) {
   const mountRef = useRef<HTMLDivElement>(null);
   const controlsRef = useRef<OrbitControls | null>(null);
-  const targetCamPos = useRef(new THREE.Vector3(14, 18, 20));
+  const targetCamPos = useRef(new THREE.Vector3(16, 20, 24));
   const targetCamLook = useRef(new THREE.Vector3(0, 1.0, 0));
   const isTransitioning = useRef(false);
 
@@ -53,9 +53,9 @@ export default function OfficeCanvas({ selectedAgentId, onSelectAgent }: OfficeC
     const scene = new THREE.Scene();
     scene.background = new THREE.Color(0x181a24);
 
-    // CAMERA (Crisp isometric perspective)
-    const camera = new THREE.PerspectiveCamera(34, width / height, 0.1, 1000);
-    camera.position.set(14, 18, 20);
+    // CAMERA (Wide isometric diorama view)
+    const camera = new THREE.PerspectiveCamera(35, width / height, 0.1, 1000);
+    camera.position.set(16, 20, 24);
     camera.lookAt(0, 1.0, 0);
 
     // RENDERER
@@ -75,7 +75,7 @@ export default function OfficeCanvas({ selectedAgentId, onSelectAgent }: OfficeC
     controls.target.set(0, 1.0, 0);
     controls.maxPolarAngle = Math.PI / 2.05;
     controls.minDistance = 4.0;
-    controls.maxDistance = 42.0;
+    controls.maxDistance = 45.0;
     controls.rotateSpeed = 0.8;
     controls.zoomSpeed = 1.0;
     controls.panSpeed = 0.8;
@@ -157,11 +157,11 @@ export default function OfficeCanvas({ selectedAgentId, onSelectAgent }: OfficeC
     const tvCtx = tvCanvas.getContext('2d')!;
     tvCtx.fillStyle = '#052e16'; tvCtx.fillRect(0, 0, 512, 280);
     tvCtx.fillStyle = '#22c55e'; tvCtx.font = 'bold 28px sans-serif';
-    tvCtx.fillText('★ PS5 GAME MATCH IN PROGRESS ★', 24, 45);
-    tvCtx.fillStyle = '#ffffff'; tvCtx.font = 'bold 22px sans-serif';
-    tvCtx.fillText('SCORE: AGENTS 3 - 1 BUGS', 110, 110);
-    tvCtx.fillStyle = '#fbbf24'; tvCtx.font = '18px sans-serif';
-    tvCtx.fillText('MATCH TIME: 88:14 // CASUAL BREAK', 90, 160);
+    tvCtx.fillText('★ PS5 GAME MATCH ★', 90, 55);
+    tvCtx.fillStyle = '#ffffff'; tvCtx.font = 'bold 26px sans-serif';
+    tvCtx.fillText('AGENTS 3 - 1 BUGS', 115, 125);
+    tvCtx.fillStyle = '#fbbf24'; tvCtx.font = 'bold 18px sans-serif';
+    tvCtx.fillText('MATCH TIME: 88:14 // CASUAL BREAK', 70, 180);
     const tvTex = new THREE.CanvasTexture(tvCanvas);
 
     // DYNAMIC SPEECH BUBBLE GENERATOR
@@ -236,7 +236,6 @@ export default function OfficeCanvas({ selectedAgentId, onSelectAgent }: OfficeC
     const meetGroup = new THREE.Group();
     meetGroup.position.set(7.5, 0, -6.5);
 
-    // Frosted Glass Partition Walls
     const glassMat = new THREE.MeshStandardMaterial({
       color: 0xbae6fd,
       transparent: true,
@@ -251,13 +250,11 @@ export default function OfficeCanvas({ selectedAgentId, onSelectAgent }: OfficeC
     meetWallSide.position.set(-4.25, 2.25, 0);
     meetGroup.add(meetWallSide);
 
-    // Dark Aluminum Door Frame & Headers
     const metalMullion = new THREE.MeshStandardMaterial({ color: 0x1e293b, metalness: 0.8 });
     const m1 = new THREE.Mesh(new THREE.BoxGeometry(0.12, 4.5, 0.12), metalMullion);
     m1.position.set(-4.25, 2.25, 4.0);
     meetGroup.add(m1);
 
-    // Large Oak Conference Table
     const confTable = new THREE.Mesh(
       new THREE.BoxGeometry(4.8, 0.1, 2.4),
       new THREE.MeshStandardMaterial({ color: 0xb45309, roughness: 0.3 })
@@ -265,14 +262,12 @@ export default function OfficeCanvas({ selectedAgentId, onSelectAgent }: OfficeC
     confTable.position.set(0, 1.05, 0);
     meetGroup.add(confTable);
 
-    // Conference Table Legs
     [[-2.0, -0.9], [2.0, -0.9], [-2.0, 0.9], [2.0, 0.9]].forEach(([lx, lz]) => {
       const leg = new THREE.Mesh(new THREE.CylinderGeometry(0.06, 0.06, 1.0, 12), metalMullion);
       leg.position.set(lx, 0.55, lz);
       meetGroup.add(leg);
     });
 
-    // 4 Executive Chairs around Conference Table
     const confChairMat = new THREE.MeshStandardMaterial({ color: 0x1e293b });
     const addConfChair = (cx: number, cz: number, ry: number) => {
       const c = new THREE.Mesh(new THREE.BoxGeometry(0.7, 0.8, 0.65), confChairMat);
@@ -285,7 +280,6 @@ export default function OfficeCanvas({ selectedAgentId, onSelectAgent }: OfficeC
     addConfChair(-1.3, 1.5, Math.PI);
     addConfChair(1.3, 1.5, Math.PI);
 
-    // Presentation Display Screen on Wall
     const presFrame = new THREE.Mesh(
       new THREE.BoxGeometry(3.2, 1.8, 0.08),
       new THREE.MeshStandardMaterial({ color: 0x090d16 })
@@ -306,7 +300,6 @@ export default function OfficeCanvas({ selectedAgentId, onSelectAgent }: OfficeC
     const pantryGroup = new THREE.Group();
     pantryGroup.position.set(-8.5, 0, -7.5);
 
-    // Modern Kitchen Bar Counter (Wood top & White marble front)
     const barTop = new THREE.Mesh(
       new THREE.BoxGeometry(5.5, 0.12, 1.6),
       new THREE.MeshStandardMaterial({ color: 0xfde68a, roughness: 0.3 })
@@ -321,7 +314,6 @@ export default function OfficeCanvas({ selectedAgentId, onSelectAgent }: OfficeC
     barBase.position.set(0, 0.525, 0);
     pantryGroup.add(barBase);
 
-    // Espresso Coffee Machine (Stainless steel + black casing)
     const espMachine = new THREE.Mesh(
       new THREE.BoxGeometry(1.2, 0.75, 0.8),
       new THREE.MeshStandardMaterial({ color: 0x334155, metalness: 0.8, roughness: 0.2 })
@@ -329,7 +321,6 @@ export default function OfficeCanvas({ selectedAgentId, onSelectAgent }: OfficeC
     espMachine.position.set(-1.4, 1.55, 0.1);
     pantryGroup.add(espMachine);
 
-    // Espresso Portafilter & LED status
     const espLight = new THREE.Mesh(
       new THREE.BoxGeometry(0.12, 0.06, 0.02),
       new THREE.MeshBasicMaterial({ color: 0x10b981 })
@@ -337,7 +328,6 @@ export default function OfficeCanvas({ selectedAgentId, onSelectAgent }: OfficeC
     espLight.position.set(-1.4, 1.8, 0.51);
     pantryGroup.add(espLight);
 
-    // Water Cooler Dispenser
     const cooler = new THREE.Mesh(
       new THREE.CylinderGeometry(0.35, 0.35, 1.5, 16),
       new THREE.MeshStandardMaterial({ color: 0xe2e8f0 })
@@ -352,7 +342,6 @@ export default function OfficeCanvas({ selectedAgentId, onSelectAgent }: OfficeC
     jug.position.set(1.8, 1.8, 0);
     pantryGroup.add(jug);
 
-    // Mugs row
     [0xef4444, 0x3b82f6, 0xf59e0b, 0x10b981].forEach((col, idx) => {
       const cmug = new THREE.Mesh(
         new THREE.CylinderGeometry(0.08, 0.07, 0.16, 12),
@@ -364,14 +353,13 @@ export default function OfficeCanvas({ selectedAgentId, onSelectAgent }: OfficeC
 
     scene.add(pantryGroup);
 
-    // 3. ZONA 3: GAMING & BREAKOUT LOUNGE (South-West: x: -8.5, z: 6.5)
+    // 3. ZONA 3: GAMING & BREAKOUT LOUNGE (South-West: x: -7.5, z: 6.0)
     const loungeGroup = new THREE.Group();
-    loungeGroup.position.set(-8.5, 0, 6.5);
+    loungeGroup.position.set(-7.5, 0, 6.0);
 
-    // Modern Comfortable L-Shape Sectional Sofa
     const sofaMat = new THREE.MeshStandardMaterial({ color: 0x334155, roughness: 0.8 });
     
-    // Main sofa seat
+    // Main sofa bench
     const sofaMain = new THREE.Mesh(new THREE.BoxGeometry(4.4, 0.5, 1.5), sofaMat);
     sofaMain.position.set(0, 0.3, 0);
     loungeGroup.add(sofaMain);
@@ -380,7 +368,7 @@ export default function OfficeCanvas({ selectedAgentId, onSelectAgent }: OfficeC
     sofaBackMain.position.set(0, 0.9, -0.6);
     loungeGroup.add(sofaBackMain);
 
-    // L-Extension chaise lounge on right side
+    // L-Extension chaise
     const sofaL = new THREE.Mesh(new THREE.BoxGeometry(1.5, 0.5, 2.2), sofaMat);
     sofaL.position.set(1.45, 0.3, 1.6);
     loungeGroup.add(sofaL);
@@ -389,7 +377,7 @@ export default function OfficeCanvas({ selectedAgentId, onSelectAgent }: OfficeC
     sofaLBack.position.set(2.05, 0.9, 1.6);
     loungeGroup.add(sofaLBack);
 
-    // Cozy Accent Cushions
+    // Cushions
     const c1 = new THREE.Mesh(new THREE.BoxGeometry(0.45, 0.45, 0.2), new THREE.MeshStandardMaterial({ color: 0xf59e0b }));
     c1.position.set(-1.4, 0.7, -0.4);
     loungeGroup.add(c1);
@@ -398,48 +386,78 @@ export default function OfficeCanvas({ selectedAgentId, onSelectAgent }: OfficeC
     c2.position.set(0.2, 0.7, -0.4);
     loungeGroup.add(c2);
 
-    // Wooden Coffee Table
+    // Coffee Table
     const cTable = new THREE.Mesh(
-      new THREE.BoxGeometry(2.0, 0.35, 1.2),
+      new THREE.BoxGeometry(2.2, 0.35, 1.2),
       new THREE.MeshStandardMaterial({ color: 0xfef08a, roughness: 0.4 })
     );
     cTable.position.set(-0.5, 0.2, 1.5);
     loungeGroup.add(cTable);
 
-    // PS5 White Console with Cyan LED light
+    // PS5 White Console with Cyan Glow Bar
     const ps5 = new THREE.Mesh(
-      new THREE.BoxGeometry(0.42, 0.1, 0.28),
+      new THREE.BoxGeometry(0.55, 0.12, 0.35),
       new THREE.MeshStandardMaterial({ color: 0xf8fafc, roughness: 0.2 })
     );
-    ps5.position.set(-0.8, 0.42, 1.5);
+    ps5.position.set(-0.7, 0.42, 1.5);
     loungeGroup.add(ps5);
 
     const ps5Light = new THREE.Mesh(
-      new THREE.BoxGeometry(0.44, 0.02, 0.02),
+      new THREE.BoxGeometry(0.56, 0.03, 0.03),
       new THREE.MeshBasicMaterial({ color: 0x38bdf8 })
     );
-    ps5Light.position.set(-0.8, 0.44, 1.65);
+    ps5Light.position.set(-0.7, 0.44, 1.68);
     loungeGroup.add(ps5Light);
 
-    // Wall Hanging TV Screen mounted on Left Wall (x: -5.35 relative to lounge, world x: -13.85)
-    const tvGroup = new THREE.Group();
-    tvGroup.position.set(-5.35, 2.6, 0.8);
-    tvGroup.rotation.y = Math.PI / 2; // Face towards the sofa
+    // PS5 DualSense Controllers on Table
+    const ctrl1 = new THREE.Mesh(
+      new THREE.BoxGeometry(0.18, 0.05, 0.12),
+      new THREE.MeshStandardMaterial({ color: 0xffffff })
+    );
+    ctrl1.position.set(-0.2, 0.4, 1.4);
+    loungeGroup.add(ctrl1);
+
+    const ctrl2 = new THREE.Mesh(
+      new THREE.BoxGeometry(0.18, 0.05, 0.12),
+      new THREE.MeshStandardMaterial({ color: 0x18181b })
+    );
+    ctrl2.position.set(0.1, 0.4, 1.4);
+    loungeGroup.add(ctrl2);
+
+    // Standing Modern Media Console & TV Unit facing sofa
+    const mediaUnit = new THREE.Group();
+    mediaUnit.position.set(-0.5, 0, 4.0);
+
+    const tvStand = new THREE.Mesh(
+      new THREE.BoxGeometry(3.6, 0.6, 0.8),
+      new THREE.MeshStandardMaterial({ color: 0x1e293b, roughness: 0.5 })
+    );
+    tvStand.position.y = 0.3;
+    mediaUnit.add(tvStand);
+
+    const tvPole = new THREE.Mesh(
+      new THREE.CylinderGeometry(0.08, 0.08, 1.2, 12),
+      new THREE.MeshStandardMaterial({ color: 0x090d16, metalness: 0.9 })
+    );
+    tvPole.position.set(0, 1.1, 0);
+    mediaUnit.add(tvPole);
 
     const tvFrame = new THREE.Mesh(
-      new THREE.BoxGeometry(3.6, 2.0, 0.08),
+      new THREE.BoxGeometry(3.4, 1.9, 0.08),
       new THREE.MeshStandardMaterial({ color: 0x090d16 })
     );
-    tvGroup.add(tvFrame);
+    tvFrame.position.set(0, 2.2, 0);
+    mediaUnit.add(tvFrame);
 
     const tvScreen = new THREE.Mesh(
-      new THREE.PlaneGeometry(3.5, 1.9),
+      new THREE.PlaneGeometry(3.3, 1.8),
       new THREE.MeshBasicMaterial({ map: tvTex })
     );
-    tvScreen.position.z = 0.05;
-    tvGroup.add(tvScreen);
+    tvScreen.position.set(0, 2.2, -0.05);
+    tvScreen.rotation.y = Math.PI; // Faces toward the sofa
+    mediaUnit.add(tvScreen);
 
-    loungeGroup.add(tvGroup);
+    loungeGroup.add(mediaUnit);
 
     scene.add(loungeGroup);
 
@@ -460,7 +478,6 @@ export default function OfficeCanvas({ selectedAgentId, onSelectAgent }: OfficeC
       podGroup.position.set(px, py, pz);
       podGroup.userData = { agentId };
 
-      // Rug
       const rug = new THREE.Mesh(
         new THREE.BoxGeometry(3.6, 0.02, 3.2),
         new THREE.MeshStandardMaterial({ color: 0x334155, roughness: 0.9 })
@@ -470,7 +487,6 @@ export default function OfficeCanvas({ selectedAgentId, onSelectAgent }: OfficeC
       podGroup.add(rug);
       clickableObjects.push(rug);
 
-      // Desk
       const desk = new THREE.Mesh(
         new THREE.BoxGeometry(2.5, 0.1, 1.3),
         new THREE.MeshStandardMaterial({ color: 0xfef3c7, roughness: 0.3 })
@@ -480,7 +496,6 @@ export default function OfficeCanvas({ selectedAgentId, onSelectAgent }: OfficeC
       podGroup.add(desk);
       clickableObjects.push(desk);
 
-      // Desk Legs
       const legMat = new THREE.MeshStandardMaterial({ color: 0x18181b, metalness: 0.8 });
       [[-1.1, -0.5], [1.1, -0.5], [-1.1, 0.5], [1.1, 0.5]].forEach(([lx, lz]) => {
         const leg = new THREE.Mesh(new THREE.CylinderGeometry(0.04, 0.04, 1.0, 12), legMat);
@@ -488,7 +503,6 @@ export default function OfficeCanvas({ selectedAgentId, onSelectAgent }: OfficeC
         podGroup.add(leg);
       });
 
-      // Laptop / Monitors per Agent
       if (agentId === 'gajahmada') {
         const monFrame = new THREE.Mesh(new THREE.BoxGeometry(1.3, 0.8, 0.05), legMat);
         monFrame.position.set(0, 1.6, -0.38);
@@ -531,7 +545,6 @@ export default function OfficeCanvas({ selectedAgentId, onSelectAgent }: OfficeC
         podGroup.add(monScreen);
       }
 
-      // Empty Chair at desk
       const chair = new THREE.Mesh(new THREE.BoxGeometry(0.75, 0.85, 0.65), new THREE.MeshStandardMaterial({ color: 0x334155, roughness: 0.7 }));
       chair.position.set(0, 0.85, 0.95);
       podGroup.add(chair);
@@ -544,10 +557,9 @@ export default function OfficeCanvas({ selectedAgentId, onSelectAgent }: OfficeC
     // --- AUTONOMOUS AGENT SIMULATOR WITH WAYPOINTS & WALKING ---
     const agentsList: AgentSim[] = [];
 
-    // WAYPOINT LOCATIONS
     const WAYPOINTS = {
       COFFEE: new THREE.Vector3(-8.5, 0, -5.8),
-      GAMING: new THREE.Vector3(-8.5, 0, 6.2),
+      GAMING: new THREE.Vector3(-7.5, 0, 6.0),
       MEETING: [
         new THREE.Vector3(6.5, 0, -6.5),
         new THREE.Vector3(8.5, 0, -6.5),
@@ -556,7 +568,6 @@ export default function OfficeCanvas({ selectedAgentId, onSelectAgent }: OfficeC
       ],
     };
 
-    // DYNAMIC SPEECHES PER STATE
     const STATE_SPEECHES: Record<string, Record<AgentState, string>> = {
       gajahmada: {
         WORKING: 'Cluster nominal. 4 agents online & orchestrating.',
@@ -588,7 +599,6 @@ export default function OfficeCanvas({ selectedAgentId, onSelectAgent }: OfficeC
       },
     };
 
-    // BUILD DYNAMIC BIPEDAL WALKING AGENTS
     Object.keys(AGENTS).forEach((agentId, idx) => {
       const data = AGENTS[agentId];
       const [hx, hy, hz] = POD_POSITIONS[agentId];
@@ -600,26 +610,22 @@ export default function OfficeCanvas({ selectedAgentId, onSelectAgent }: OfficeC
 
       const charMesh = new THREE.Group();
 
-      // Hips / Pants
       const pantsMat = new THREE.MeshStandardMaterial({ color: 0x1e293b, roughness: 0.8 });
       const hips = new THREE.Mesh(new THREE.BoxGeometry(0.5, 0.22, 0.4), pantsMat);
       hips.position.y = 0.85;
       charMesh.add(hips);
 
-      // Torso
       const shirtMat = new THREE.MeshStandardMaterial({ color: data.accentHex, roughness: 0.6 });
       const torso = new THREE.Mesh(new THREE.BoxGeometry(0.54, 0.65, 0.36), shirtMat);
       torso.position.y = 1.25;
       charMesh.add(torso);
 
-      // Head
       const headGroup = new THREE.Group();
       headGroup.position.y = 1.75;
       const skinMat = new THREE.MeshStandardMaterial({ color: 0xffdfba, roughness: 0.4 });
       const head = new THREE.Mesh(new THREE.BoxGeometry(0.36, 0.36, 0.36), skinMat);
       headGroup.add(head);
 
-      // Hair
       const hairMat = new THREE.MeshStandardMaterial({ color: idx === 1 ? 0x451a03 : 0x18181b, roughness: 0.5 });
       const hair = new THREE.Mesh(new THREE.BoxGeometry(0.4, 0.14, 0.4), hairMat);
       hair.position.y = 0.22;
@@ -627,7 +633,6 @@ export default function OfficeCanvas({ selectedAgentId, onSelectAgent }: OfficeC
 
       charMesh.add(headGroup);
 
-      // Arms
       const leftArm = new THREE.Group();
       leftArm.position.set(-0.35, 1.45, 0);
       const lArmMesh = new THREE.Mesh(new THREE.BoxGeometry(0.14, 0.5, 0.14), shirtMat);
@@ -642,7 +647,6 @@ export default function OfficeCanvas({ selectedAgentId, onSelectAgent }: OfficeC
       rightArm.add(rArmMesh);
       charMesh.add(rightArm);
 
-      // Legs
       const leftLeg = new THREE.Group();
       leftLeg.position.set(-0.16, 0.8, 0);
       const lLegMesh = new THREE.Mesh(new THREE.BoxGeometry(0.18, 0.75, 0.2), pantsMat);
@@ -659,7 +663,6 @@ export default function OfficeCanvas({ selectedAgentId, onSelectAgent }: OfficeC
 
       agentGroup.add(charMesh);
 
-      // Initial Bubble
       const initialText = STATE_SPEECHES[agentId].WORKING;
       const bTex = createBubbleTexture(data.name, data.role, initialText, data.color);
       const bSprite = new THREE.Sprite(new THREE.SpriteMaterial({ map: bTex, transparent: true }));
@@ -697,7 +700,6 @@ export default function OfficeCanvas({ selectedAgentId, onSelectAgent }: OfficeC
       });
     });
 
-    // RAYCASTER DRAG VS CLICK
     const raycaster = new THREE.Raycaster();
     const mouse = new THREE.Vector2();
     let pointerDownPos = { x: 0, y: 0 };
@@ -733,7 +735,6 @@ export default function OfficeCanvas({ selectedAgentId, onSelectAgent }: OfficeC
     renderer.domElement.addEventListener('pointerdown', handlePointerDown);
     renderer.domElement.addEventListener('pointerup', handlePointerUp);
 
-    // RESIZE
     const handleResize = () => {
       if (!mountRef.current) return;
       width = mountRef.current.clientWidth || window.innerWidth;
@@ -744,7 +745,6 @@ export default function OfficeCanvas({ selectedAgentId, onSelectAgent }: OfficeC
     };
     window.addEventListener('resize', handleResize);
 
-    // 60 FPS RENDER LOOP + AGENT BEHAVIOR STATE MACHINE
     let animId: number;
     let t = 0;
 
@@ -752,7 +752,6 @@ export default function OfficeCanvas({ selectedAgentId, onSelectAgent }: OfficeC
       animId = requestAnimationFrame(animate);
       t += 0.02;
 
-      // Camera lerp
       if (isTransitioning.current) {
         camera.position.lerp(targetCamPos.current, 0.06);
         controls.target.lerp(targetCamLook.current, 0.06);
@@ -762,11 +761,9 @@ export default function OfficeCanvas({ selectedAgentId, onSelectAgent }: OfficeC
       }
       controls.update();
 
-      // SIMULATE AGENTS (Walking, Taking Breaks, Changing Speech)
       agentsList.forEach((agent, i) => {
         agent.stateTimer -= 1;
 
-        // STATE TRANSITION LOGIC
         if (agent.stateTimer <= 0) {
           if (agent.state === 'WORKING') {
             const roll = Math.random();
@@ -804,7 +801,6 @@ export default function OfficeCanvas({ selectedAgentId, onSelectAgent }: OfficeC
             agent.isSeated = false;
           }
 
-          // Update Dynamic Speech Bubble Texture
           const newText = STATE_SPEECHES[agent.id][agent.state];
           if (newText !== agent.currentText) {
             agent.currentText = newText;
@@ -814,7 +810,6 @@ export default function OfficeCanvas({ selectedAgentId, onSelectAgent }: OfficeC
           }
         }
 
-        // PHYSICAL MOVEMENT & ANIMATION
         if (agent.state === 'WALKING') {
           const moveDir = new THREE.Vector3().subVectors(agent.targetPos, agent.currentPos);
           const dist = moveDir.length();
@@ -826,7 +821,6 @@ export default function OfficeCanvas({ selectedAgentId, onSelectAgent }: OfficeC
 
             agent.group.rotation.y = Math.atan2(moveDir.x, moveDir.z);
 
-            // Walk Cycle Swing
             const walkSpeed = 8.0;
             agent.leftLeg.rotation.x = Math.sin(t * walkSpeed) * 0.55;
             agent.rightLeg.rotation.x = -Math.sin(t * walkSpeed) * 0.55;
@@ -840,14 +834,14 @@ export default function OfficeCanvas({ selectedAgentId, onSelectAgent }: OfficeC
           }
         } else if (agent.state === 'WORKING') {
           agent.group.rotation.y = 0;
-          agent.charMesh.position.y = -0.15; // seated pose
+          agent.charMesh.position.y = -0.15;
 
           agent.leftArm.rotation.x = 0.5 + Math.sin(t * 10 + i) * 0.15;
           agent.rightArm.rotation.x = 0.5 + Math.cos(t * 10 + i * 1.5) * 0.15;
           agent.head.rotation.y = Math.sin(t * 0.8 + i) * 0.08;
         } else if (agent.state === 'GAMING') {
-          agent.group.rotation.y = -Math.PI / 2; // Face TV on left wall
-          agent.charMesh.position.y = -0.18; // Seated on sofa
+          agent.group.rotation.y = 0; // Face TV directly in front of sofa
+          agent.charMesh.position.y = -0.18;
 
           agent.leftArm.rotation.x = 0.8 + Math.sin(t * 4) * 0.05;
           agent.rightArm.rotation.x = 0.8 + Math.cos(t * 4) * 0.05;
@@ -884,7 +878,6 @@ export default function OfficeCanvas({ selectedAgentId, onSelectAgent }: OfficeC
     };
   }, [onSelectAgent]);
 
-  // CAMERA POSITIONING ON AGENT SELECTION
   useEffect(() => {
     const POD_POSITIONS: Record<string, [number, number, number]> = {
       gajahmada: [-1.8, 0, -2.5],
@@ -899,7 +892,7 @@ export default function OfficeCanvas({ selectedAgentId, onSelectAgent }: OfficeC
       targetCamLook.current.set(ax, ay + 1.1, az);
       isTransitioning.current = true;
     } else {
-      targetCamPos.current.set(14, 18, 20);
+      targetCamPos.current.set(16, 20, 24);
       targetCamLook.current.set(0, 1.0, 0);
       isTransitioning.current = true;
     }
