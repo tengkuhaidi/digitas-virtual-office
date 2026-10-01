@@ -759,19 +759,81 @@ export default function OfficeCanvas({ selectedAgentId, onSelectAgent }: OfficeC
 
     Object.keys(AGENTS).forEach(buildWorkstation);
 
-    // --- AUTONOMOUS AGENT SIMULATOR WITH WAYPOINTS & WALKING ---
+    // --- AUTONOMOUS AGENT SIMULATOR WITH WAYPOINTS & DOCKING ---
     const agentsList: AgentSim[] = [];
 
-    const WAYPOINTS = {
-      COFFEE: new THREE.Vector3(-9.5, 0, -6.5),
-      GAMING: new THREE.Vector3(-8.5, 0, 8.2),
-      DINING: new THREE.Vector3(-10.5, 0, 0),
-      GYM: new THREE.Vector3(8.5, 0, 7.5),
+    // STRICT DOCKING SLOTS WITH TARGET YAW ANGLES
+    // Meeting Room is centered at x: 9.5, z: -8.0.
+    // Table is at (9.5, 0, -8.0). Chairs are at:
+    // Slot 0: (8.0, 0, -9.5) facing south (yaw: 0)
+    // Slot 1: (11.0, 0, -9.5) facing south (yaw: 0)
+    // Slot 2: (8.0, 0, -6.5) facing north (yaw: Math.PI)
+    // Slot 3: (11.0, 0, -6.5) facing north (yaw: Math.PI)
+    // Meeting door entrance waypoint: (5.0, 0, -3.5)
+
+    // Dining Table is centered at x: -10.5, z: 0. Chairs are at:
+    // Slot 0: (-11.7, 0, -1.4) facing south (yaw: 0)
+    // Slot 1: (-10.5, 0, -1.4) facing south (yaw: 0)
+    // Slot 2: (-9.3, 0, -1.4) facing south (yaw: 0)
+    // Slot 3: (-10.5, 0, 1.4) facing north (yaw: Math.PI)
+
+    // Gaming Lounge Sofa L is at (-8.5, 0, 8.5)
+    // Slots facing front TV (yaw: 0):
+    // Slot 0: (-9.5, 0, 8.5)
+    // Slot 1: (-8.5, 0, 8.5)
+    // Slot 2: (-7.5, 0, 8.5)
+    // Slot 3: (-7.0, 0, 9.8) chaise facing west (yaw: -Math.PI / 2)
+
+    // Gym corner at (10.5, 0, 7.5):
+    // Slot 0: (8.5, 0, 8.0) treadmill facing north (yaw: Math.PI)
+    // Slot 1: (12.7, 0, 5.7) dumbbell rack facing west (yaw: -Math.PI / 2)
+    // Slot 2: (12.5, 0, 9.0) yoga ball facing center (yaw: -Math.PI * 0.75)
+    // Slot 3: (9.5, 0, 6.5) stretch mat facing north (yaw: Math.PI)
+
+    // Coffee bar at (-9.5, 0, -8.0):
+    // Slot 0: (-10.9, 0, -6.9) facing bar (yaw: -Math.PI / 2)
+    // Slot 1: (-9.5, 0, -6.9) facing bar (yaw: -Math.PI / 2)
+    // Slot 2: (-8.2, 0, -6.9) facing bar (yaw: -Math.PI / 2)
+    // Slot 3: (-7.7, 0, -7.0) water cooler (yaw: -Math.PI / 2)
+
+    interface DockSlot {
+      pos: THREE.Vector3;
+      yaw: number;
+      doorWaypoints?: THREE.Vector3[];
+    }
+
+    const DOCK_SLOTS: Record<AgentState, DockSlot[]> = {
+      WORKING: [], // populated dynamically from agent homePos
+      WALKING: [],
       MEETING: [
-        new THREE.Vector3(8.0, 0, -8.0),
-        new THREE.Vector3(11.0, 0, -8.0),
-        new THREE.Vector3(8.0, 0, -6.5),
-        new THREE.Vector3(11.0, 0, -6.5),
+        { pos: new THREE.Vector3(8.0, 0, -9.5), yaw: 0, doorWaypoints: [new THREE.Vector3(5.0, 0, -3.5), new THREE.Vector3(7.5, 0, -5.5)] },
+        { pos: new THREE.Vector3(11.0, 0, -9.5), yaw: 0, doorWaypoints: [new THREE.Vector3(5.0, 0, -3.5), new THREE.Vector3(9.5, 0, -5.5)] },
+        { pos: new THREE.Vector3(8.0, 0, -6.5), yaw: Math.PI, doorWaypoints: [new THREE.Vector3(5.0, 0, -3.5)] },
+        { pos: new THREE.Vector3(11.0, 0, -6.5), yaw: Math.PI, doorWaypoints: [new THREE.Vector3(5.0, 0, -3.5)] },
+      ],
+      DINING: [
+        { pos: new THREE.Vector3(-11.7, 0, -1.4), yaw: 0, doorWaypoints: [new THREE.Vector3(-6.5, 0, -1.4)] },
+        { pos: new THREE.Vector3(-10.5, 0, -1.4), yaw: 0, doorWaypoints: [new THREE.Vector3(-6.5, 0, -1.4)] },
+        { pos: new THREE.Vector3(-9.3, 0, -1.4), yaw: 0, doorWaypoints: [new THREE.Vector3(-6.5, 0, -1.4)] },
+        { pos: new THREE.Vector3(-10.5, 0, 1.4), yaw: Math.PI, doorWaypoints: [new THREE.Vector3(-6.5, 0, 1.4)] },
+      ],
+      GAMING: [
+        { pos: new THREE.Vector3(-9.5, 0, 8.5), yaw: 0, doorWaypoints: [new THREE.Vector3(-6.5, 0, 6.0)] },
+        { pos: new THREE.Vector3(-8.5, 0, 8.5), yaw: 0, doorWaypoints: [new THREE.Vector3(-6.5, 0, 6.0)] },
+        { pos: new THREE.Vector3(-7.5, 0, 8.5), yaw: 0, doorWaypoints: [new THREE.Vector3(-6.5, 0, 6.0)] },
+        { pos: new THREE.Vector3(-7.0, 0, 9.8), yaw: -Math.PI / 2, doorWaypoints: [new THREE.Vector3(-6.5, 0, 6.0)] },
+      ],
+      GYM: [
+        { pos: new THREE.Vector3(8.5, 0, 8.0), yaw: Math.PI, doorWaypoints: [new THREE.Vector3(6.0, 0, 6.0)] },
+        { pos: new THREE.Vector3(12.7, 0, 5.7), yaw: -Math.PI / 2, doorWaypoints: [new THREE.Vector3(6.0, 0, 6.0)] },
+        { pos: new THREE.Vector3(12.5, 0, 9.0), yaw: -Math.PI * 0.75, doorWaypoints: [new THREE.Vector3(6.0, 0, 6.0)] },
+        { pos: new THREE.Vector3(9.5, 0, 6.5), yaw: Math.PI, doorWaypoints: [new THREE.Vector3(6.0, 0, 6.0)] },
+      ],
+      COFFEE: [
+        { pos: new THREE.Vector3(-10.9, 0, -6.8), yaw: 0, doorWaypoints: [new THREE.Vector3(-6.5, 0, -5.5)] },
+        { pos: new THREE.Vector3(-9.5, 0, -6.8), yaw: 0, doorWaypoints: [new THREE.Vector3(-6.5, 0, -5.5)] },
+        { pos: new THREE.Vector3(-8.2, 0, -6.8), yaw: 0, doorWaypoints: [new THREE.Vector3(-6.5, 0, -5.5)] },
+        { pos: new THREE.Vector3(-7.7, 0, -6.8), yaw: 0, doorWaypoints: [new THREE.Vector3(-6.5, 0, -5.5)] },
       ],
     };
 
@@ -814,7 +876,21 @@ export default function OfficeCanvas({ selectedAgentId, onSelectAgent }: OfficeC
       },
     };
 
-    // BUILD ARTICULATED REALISTIC BIPEDAL AGENTS (Articulated Hips, Knees, Arms)
+    // Navigation queue helper
+    const agentPathQueues: Record<string, THREE.Vector3[]> = {
+      gajahmada: [],
+      robert: [],
+      talia: [],
+      putra: [],
+    };
+    const agentTargetYaws: Record<string, number> = {
+      gajahmada: 0,
+      robert: 0,
+      talia: 0,
+      putra: 0,
+    };
+
+    // BUILD ARTICULATED BIPEDAL AGENTS
     Object.keys(AGENTS).forEach((agentId, idx) => {
       const data = AGENTS[agentId];
       const [hx, hy, hz] = POD_POSITIONS[agentId];
@@ -830,7 +906,7 @@ export default function OfficeCanvas({ selectedAgentId, onSelectAgent }: OfficeC
       const shirtMat = new THREE.MeshStandardMaterial({ color: data.accentHex, roughness: 0.6 });
       const skinMat = new THREE.MeshStandardMaterial({ color: 0xffdfba, roughness: 0.4 });
 
-      // Pelvis / Hips Center
+      // Pelvis
       const pelvis = new THREE.Mesh(new THREE.BoxGeometry(0.52, 0.2, 0.38), pantsMat);
       pelvis.position.y = 0.65;
       charMesh.add(pelvis);
@@ -840,7 +916,6 @@ export default function OfficeCanvas({ selectedAgentId, onSelectAgent }: OfficeC
       torso.position.y = 1.05;
       charMesh.add(torso);
 
-      // White collar
       const collar = new THREE.Mesh(new THREE.BoxGeometry(0.24, 0.08, 0.04), new THREE.MeshStandardMaterial({ color: 0xffffff }));
       collar.position.set(0, 1.35, -0.18);
       charMesh.add(collar);
@@ -851,7 +926,6 @@ export default function OfficeCanvas({ selectedAgentId, onSelectAgent }: OfficeC
       const head = new THREE.Mesh(new THREE.BoxGeometry(0.36, 0.36, 0.36), skinMat);
       headGroup.add(head);
 
-      // Hair
       const hairMat = new THREE.MeshStandardMaterial({ color: idx === 1 ? 0x451a03 : 0x18181b, roughness: 0.5 });
       const hair = new THREE.Mesh(new THREE.BoxGeometry(0.4, 0.14, 0.4), hairMat);
       hair.position.y = 0.22;
@@ -859,7 +933,7 @@ export default function OfficeCanvas({ selectedAgentId, onSelectAgent }: OfficeC
 
       charMesh.add(headGroup);
 
-      // Arms (Shoulder pivots)
+      // Arms
       const leftArm = new THREE.Group();
       leftArm.position.set(-0.35, 1.25, 0);
       const lArmMesh = new THREE.Mesh(new THREE.BoxGeometry(0.14, 0.45, 0.14), shirtMat);
@@ -874,15 +948,13 @@ export default function OfficeCanvas({ selectedAgentId, onSelectAgent }: OfficeC
       rightArm.add(rArmMesh);
       charMesh.add(rightArm);
 
-      // Legs: ARTICULATED HIPS & KNEES (Natural Sitting at 90 degrees!)
-      // Left Thigh
+      // Articulated Legs (Thigh + Shin)
       const leftThigh = new THREE.Group();
       leftThigh.position.set(-0.16, 0.6, 0);
       const lThighMesh = new THREE.Mesh(new THREE.BoxGeometry(0.18, 0.42, 0.2), pantsMat);
       lThighMesh.position.y = -0.21;
       leftThigh.add(lThighMesh);
 
-      // Left Knee / Shin
       const leftShin = new THREE.Group();
       leftShin.position.set(0, -0.42, 0);
       const lShinMesh = new THREE.Mesh(new THREE.BoxGeometry(0.16, 0.42, 0.18), pantsMat);
@@ -891,14 +963,12 @@ export default function OfficeCanvas({ selectedAgentId, onSelectAgent }: OfficeC
       leftThigh.add(leftShin);
       charMesh.add(leftThigh);
 
-      // Right Thigh
       const rightThigh = new THREE.Group();
       rightThigh.position.set(0.16, 0.6, 0);
       const rThighMesh = new THREE.Mesh(new THREE.BoxGeometry(0.18, 0.42, 0.2), pantsMat);
       rThighMesh.position.y = -0.21;
       rightThigh.add(rThighMesh);
 
-      // Right Knee / Shin
       const rightShin = new THREE.Group();
       rightShin.position.set(0, -0.42, 0);
       const rShinMesh = new THREE.Mesh(new THREE.BoxGeometry(0.16, 0.42, 0.18), pantsMat);
@@ -932,7 +1002,7 @@ export default function OfficeCanvas({ selectedAgentId, onSelectAgent }: OfficeC
         currentPos: homeVec.clone(),
         targetPos: homeVec.clone(),
         state: 'WORKING',
-        stateTimer: 200 + Math.random() * 300,
+        stateTimer: 250 + Math.random() * 250,
         group: agentGroup,
         charMesh,
         torso,
@@ -995,7 +1065,7 @@ export default function OfficeCanvas({ selectedAgentId, onSelectAgent }: OfficeC
     };
     window.addEventListener('resize', handleResize);
 
-    // 60 FPS RENDER LOOP + BEHAVIOR STATE MACHINE
+    // 60 FPS RENDER LOOP + PRECISION DOCKING SIMULATION
     let animId: number;
     let t = 0;
 
@@ -1012,65 +1082,68 @@ export default function OfficeCanvas({ selectedAgentId, onSelectAgent }: OfficeC
       }
       controls.update();
 
-      // SIMULATE AGENTS (Walking, Coffee, Gaming, Meeting, Dining, Gym)
+      // SIMULATE AGENTS (Safe Waypoint Navigation, Strict Chair Snapping, Zero Slanted Sitting)
       agentsList.forEach((agent, i) => {
         agent.stateTimer -= 1;
 
         if (agent.stateTimer <= 0) {
           if (agent.state === 'WORKING') {
+            // Pick a break destination
             const roll = Math.random();
-            if (roll < 0.22) {
-              agent.state = 'WALKING';
-              agent.targetPos.copy(WAYPOINTS.COFFEE);
-              agent.targetPos.x += (Math.random() - 0.5) * 1.5;
-            } else if (roll < 0.44) {
-              agent.state = 'WALKING';
-              agent.targetPos.copy(WAYPOINTS.GAMING);
-              agent.targetPos.x += (Math.random() - 0.5) * 1.5;
-            } else if (roll < 0.66) {
-              agent.state = 'WALKING';
-              agent.targetPos.copy(WAYPOINTS.DINING);
-              agent.targetPos.z += (Math.random() - 0.5) * 1.5;
-            } else if (roll < 0.85) {
-              agent.state = 'WALKING';
-              agent.targetPos.copy(WAYPOINTS.GYM);
-            } else {
-              agent.state = 'WALKING';
-              agent.targetPos.copy(WAYPOINTS.MEETING[i % 4]);
-            }
-            agent.stateTimer = 500;
-            agent.isSeated = false;
-          } else if (agent.state === 'WALKING') {
-            if (agent.targetPos.distanceTo(WAYPOINTS.COFFEE) < 3.0) {
-              agent.state = 'COFFEE';
-              agent.stateTimer = 400 + Math.random() * 200;
-              agent.isSeated = false;
-            } else if (agent.targetPos.distanceTo(WAYPOINTS.GAMING) < 3.0) {
-              agent.state = 'GAMING';
-              agent.stateTimer = 450 + Math.random() * 200;
-              agent.isSeated = true;
-            } else if (agent.targetPos.distanceTo(WAYPOINTS.DINING) < 3.0) {
-              agent.state = 'DINING';
-              agent.stateTimer = 450 + Math.random() * 200;
-              agent.isSeated = true;
-            } else if (agent.targetPos.distanceTo(WAYPOINTS.GYM) < 3.0) {
-              agent.state = 'GYM';
-              agent.stateTimer = 400 + Math.random() * 200;
-              agent.isSeated = false;
-            } else {
-              agent.state = 'MEETING';
-              agent.stateTimer = 400 + Math.random() * 200;
-              agent.isSeated = true;
-            }
-          } else {
-            agent.state = 'WALKING';
-            agent.targetPos.copy(agent.homePos);
-            agent.stateTimer = 500;
-            agent.isSeated = false;
-          }
+            let nextState: AgentState = 'MEETING';
+            if (roll < 0.25) nextState = 'COFFEE';
+            else if (roll < 0.50) nextState = 'GAMING';
+            else if (roll < 0.75) nextState = 'DINING';
+            else if (roll < 0.90) nextState = 'GYM';
+            else nextState = 'MEETING';
 
-          const newText = STATE_SPEECHES[agent.id][agent.state];
-          if (newText !== agent.currentText) {
+            const slot = DOCK_SLOTS[nextState][i % 4];
+            agent.state = 'WALKING';
+            agent.isSeated = false;
+            agent.stateTimer = 600;
+
+            // Plan multi-step waypoints so agent doesn't cut through walls
+            const pathQueue: THREE.Vector3[] = [];
+            // Step out of desk to aisle
+            pathQueue.push(new THREE.Vector3(agent.homePos.x, 0, agent.homePos.z + 1.2));
+            // Center room aisle
+            pathQueue.push(new THREE.Vector3(0, 0, 0));
+            // Door / Approach waypoints
+            if (slot.doorWaypoints) {
+              slot.doorWaypoints.forEach(wp => pathQueue.push(wp.clone()));
+            }
+            // Final exact slot
+            pathQueue.push(slot.pos.clone());
+
+            agentPathQueues[agent.id] = pathQueue;
+            agentTargetYaws[agent.id] = slot.yaw;
+            agent.targetPos.copy(pathQueue[0]);
+
+            // Set Speech immediately for intent
+            const newText = STATE_SPEECHES[agent.id][nextState];
+            agent.currentText = newText;
+            const newTex = createBubbleTexture(agent.name, agent.role, newText, agent.color);
+            agent.bubbleSprite.material.map = newTex;
+            agent.bubbleSprite.material.needsUpdate = true;
+          } else if (agent.state === 'WALKING') {
+            // Handled when path is complete
+          } else {
+            // Return to home workstation desk
+            agent.state = 'WALKING';
+            agent.isSeated = false;
+            agent.stateTimer = 600;
+
+            const pathQueue: THREE.Vector3[] = [];
+            // Step out from current position to hallway
+            pathQueue.push(new THREE.Vector3(0, 0, 0));
+            pathQueue.push(new THREE.Vector3(agent.homePos.x, 0, agent.homePos.z + 1.2));
+            pathQueue.push(agent.homePos.clone());
+
+            agentPathQueues[agent.id] = pathQueue;
+            agentTargetYaws[agent.id] = 0; // face desk strictly forward!
+            agent.targetPos.copy(pathQueue[0]);
+
+            const newText = STATE_SPEECHES[agent.id].WORKING;
             agent.currentText = newText;
             const newTex = createBubbleTexture(agent.name, agent.role, newText, agent.color);
             agent.bubbleSprite.material.map = newTex;
@@ -1078,109 +1151,125 @@ export default function OfficeCanvas({ selectedAgentId, onSelectAgent }: OfficeC
           }
         }
 
-        // MOVEMENT & ARTICULATED POSTURE LOGIC
+        // MOVEMENT & PRECISE SEATING DOCKING
         if (agent.state === 'WALKING') {
-          const moveDir = new THREE.Vector3().subVectors(agent.targetPos, agent.currentPos);
-          const dist = moveDir.length();
+          const queue = agentPathQueues[agent.id];
+          if (queue && queue.length > 0) {
+            const currentWaypoint = queue[0];
+            const moveDir = new THREE.Vector3().subVectors(currentWaypoint, agent.currentPos);
+            const dist = moveDir.length();
 
-          if (dist > 0.15) {
-            moveDir.normalize();
-            agent.currentPos.addScaledVector(moveDir, 0.045);
-            agent.group.position.copy(agent.currentPos);
-            agent.group.rotation.y = Math.atan2(moveDir.x, moveDir.z);
+            if (dist > 0.12) {
+              moveDir.normalize();
+              agent.currentPos.addScaledVector(moveDir, 0.05);
+              agent.group.position.copy(agent.currentPos);
 
-            // Natural Standing Walk Cycle
-            const walkSpeed = 8.0;
-            agent.leftThigh.rotation.x = Math.sin(t * walkSpeed) * 0.55;
-            agent.rightThigh.rotation.x = -Math.sin(t * walkSpeed) * 0.55;
-            agent.leftShin.rotation.x = Math.max(0, -Math.sin(t * walkSpeed) * 0.5);
-            agent.rightShin.rotation.x = Math.max(0, Math.sin(t * walkSpeed) * 0.5);
+              // Smoothly turn towards travel heading
+              const targetYaw = Math.atan2(moveDir.x, moveDir.z);
+              let diff = targetYaw - agent.group.rotation.y;
+              while (diff < -Math.PI) diff += Math.PI * 2;
+              while (diff > Math.PI) diff -= Math.PI * 2;
+              agent.group.rotation.y += diff * 0.15;
 
-            agent.leftArm.rotation.x = -Math.sin(t * walkSpeed) * 0.45;
-            agent.rightArm.rotation.x = Math.sin(t * walkSpeed) * 0.45;
-            agent.charMesh.position.y = Math.abs(Math.sin(t * walkSpeed)) * 0.08;
-          } else {
-            agent.stateTimer = 0;
-            agent.leftThigh.rotation.x = 0;
-            agent.rightThigh.rotation.x = 0;
-            agent.leftShin.rotation.x = 0;
-            agent.rightShin.rotation.x = 0;
+              // Standing walk cycle animation
+              const walkSpeed = 9.0;
+              agent.leftThigh.rotation.x = Math.sin(t * walkSpeed) * 0.55;
+              agent.rightThigh.rotation.x = -Math.sin(t * walkSpeed) * 0.55;
+              agent.leftShin.rotation.x = Math.max(0, -Math.sin(t * walkSpeed) * 0.5);
+              agent.rightShin.rotation.x = Math.max(0, Math.sin(t * walkSpeed) * 0.5);
+
+              agent.leftArm.rotation.x = -Math.sin(t * walkSpeed) * 0.45;
+              agent.rightArm.rotation.x = Math.sin(t * walkSpeed) * 0.45;
+              agent.charMesh.position.y = Math.abs(Math.sin(t * walkSpeed)) * 0.08;
+            } else {
+              // Advance to next waypoint
+              queue.shift();
+              if (queue.length === 0) {
+                // ARRIVED AT DESTINATION: PRECISE DOCKING!
+                agent.group.position.copy(currentWaypoint);
+                agent.currentPos.copy(currentWaypoint);
+
+                // STRICT YAW ALIGNMENT (Zero slanted rotation!)
+                agent.group.rotation.y = agentTargetYaws[agent.id];
+
+                // Determine active resting state based on position
+                if (currentWaypoint.distanceTo(agent.homePos) < 0.2) {
+                  agent.state = 'WORKING';
+                  agent.isSeated = true;
+                  agent.stateTimer = 450 + Math.random() * 250;
+                } else if (currentWaypoint.z < -5.5 && currentWaypoint.x > 6.0) {
+                  agent.state = 'MEETING';
+                  agent.isSeated = true;
+                  agent.stateTimer = 450 + Math.random() * 200;
+                } else if (currentWaypoint.z > 6.5 && currentWaypoint.x < -6.0) {
+                  agent.state = 'GAMING';
+                  agent.isSeated = true;
+                  agent.stateTimer = 450 + Math.random() * 200;
+                } else if (Math.abs(currentWaypoint.z) < 2.0 && currentWaypoint.x < -8.0) {
+                  agent.state = 'DINING';
+                  agent.isSeated = true;
+                  agent.stateTimer = 450 + Math.random() * 200;
+                } else if (currentWaypoint.x > 7.0 && currentWaypoint.z > 5.0) {
+                  agent.state = 'GYM';
+                  agent.isSeated = false;
+                  agent.stateTimer = 400 + Math.random() * 200;
+                } else {
+                  agent.state = 'COFFEE';
+                  agent.isSeated = false;
+                  agent.stateTimer = 400 + Math.random() * 200;
+                }
+              }
+            }
           }
-        } else if (agent.state === 'WORKING') {
-          // NATURAL SEATED POSTURE: Thighs bent 90 deg forward, Shins 90 deg down to floor!
-          agent.group.rotation.y = 0;
+        } else if (agent.isSeated) {
+          // STRICT CLEAN SEATING POSTURE (No tilt, thighs horizontal 90deg, shins vertical 90deg)
           agent.charMesh.position.y = 0;
+          agent.group.rotation.y = agentTargetYaws[agent.id]; // Locked orientation!
 
           agent.leftThigh.rotation.x = -Math.PI / 2;
           agent.rightThigh.rotation.x = -Math.PI / 2;
           agent.leftShin.rotation.x = Math.PI / 2;
           agent.rightShin.rotation.x = Math.PI / 2;
 
-          // Typing arms
-          agent.leftArm.rotation.x = 0.5 + Math.sin(t * 10 + i) * 0.15;
-          agent.rightArm.rotation.x = 0.5 + Math.cos(t * 10 + i * 1.5) * 0.15;
-          agent.head.rotation.y = Math.sin(t * 0.8 + i) * 0.08;
-        } else if (agent.state === 'GAMING') {
-          // Seated on sofa facing TV
-          agent.group.rotation.y = 0;
-          agent.charMesh.position.y = -0.1;
-
-          agent.leftThigh.rotation.x = -Math.PI / 2.2;
-          agent.rightThigh.rotation.x = -Math.PI / 2.2;
-          agent.leftShin.rotation.x = Math.PI / 2.2;
-          agent.rightShin.rotation.x = Math.PI / 2.2;
-
-          // Holding PS5 Controller
-          agent.leftArm.rotation.x = 0.75 + Math.sin(t * 4) * 0.05;
-          agent.rightArm.rotation.x = 0.75 + Math.cos(t * 4) * 0.05;
-        } else if (agent.state === 'DINING') {
-          // Seated at Dining Table
-          agent.group.rotation.y = Math.PI / 2;
-          agent.charMesh.position.y = 0;
-
-          agent.leftThigh.rotation.x = -Math.PI / 2;
-          agent.rightThigh.rotation.x = -Math.PI / 2;
-          agent.leftShin.rotation.x = Math.PI / 2;
-          agent.rightShin.rotation.x = Math.PI / 2;
-
-          // Eating motion
-          agent.rightArm.rotation.x = 0.6 + Math.sin(t * 3) * 0.2;
-          agent.leftArm.rotation.x = 0.4;
+          if (agent.state === 'WORKING') {
+            agent.leftArm.rotation.x = 0.5 + Math.sin(t * 10 + i) * 0.15;
+            agent.rightArm.rotation.x = 0.5 + Math.cos(t * 10 + i * 1.5) * 0.15;
+            agent.head.rotation.y = Math.sin(t * 0.8 + i) * 0.08;
+          } else if (agent.state === 'GAMING') {
+            agent.leftArm.rotation.x = 0.75 + Math.sin(t * 4) * 0.05;
+            agent.rightArm.rotation.x = 0.75 + Math.cos(t * 4) * 0.05;
+          } else if (agent.state === 'DINING') {
+            agent.rightArm.rotation.x = 0.6 + Math.sin(t * 3) * 0.2;
+            agent.leftArm.rotation.x = 0.4;
+          } else if (agent.state === 'MEETING') {
+            agent.head.rotation.y = Math.sin(t * 1.2) * 0.15;
+            agent.leftArm.rotation.x = 0.4;
+            agent.rightArm.rotation.x = 0.4;
+          }
         } else if (agent.state === 'GYM') {
-          // Standing / jogging on treadmill
-          agent.group.rotation.y = Math.PI;
+          // Jogging on treadmill
+          agent.group.rotation.y = agentTargetYaws[agent.id];
           const jogSpeed = 12.0;
           agent.leftThigh.rotation.x = Math.sin(t * jogSpeed) * 0.6;
           agent.rightThigh.rotation.x = -Math.sin(t * jogSpeed) * 0.6;
           agent.leftShin.rotation.x = Math.max(0, -Math.sin(t * jogSpeed) * 0.7);
           agent.rightShin.rotation.x = Math.max(0, Math.sin(t * jogSpeed) * 0.7);
-
           agent.leftArm.rotation.x = -Math.sin(t * jogSpeed) * 0.6;
           agent.rightArm.rotation.x = Math.sin(t * jogSpeed) * 0.6;
           agent.charMesh.position.y = Math.abs(Math.sin(t * jogSpeed)) * 0.1;
         } else if (agent.state === 'COFFEE') {
-          agent.group.rotation.y = -Math.PI / 2;
+          // Standing at coffee bar
+          agent.group.rotation.y = agentTargetYaws[agent.id];
           agent.charMesh.position.y = 0;
-
           agent.leftThigh.rotation.x = 0;
           agent.rightThigh.rotation.x = 0;
           agent.leftShin.rotation.x = 0;
           agent.rightShin.rotation.x = 0;
-
           agent.rightArm.rotation.x = 0.6 + Math.sin(t * 2) * 0.2;
           agent.leftArm.rotation.x = 0.1;
-        } else if (agent.state === 'MEETING') {
-          agent.group.rotation.y = Math.PI / 2;
-          agent.charMesh.position.y = 0;
-
-          agent.leftThigh.rotation.x = -Math.PI / 2;
-          agent.rightThigh.rotation.x = -Math.PI / 2;
-          agent.leftShin.rotation.x = Math.PI / 2;
-          agent.rightShin.rotation.x = Math.PI / 2;
-
-          agent.head.rotation.y = Math.sin(t * 1.2) * 0.15;
         }
 
+        // Float speech bubble smoothly
         agent.bubbleSprite.position.y = 2.5 + Math.sin(t * 2 + i) * 0.08;
       });
 
